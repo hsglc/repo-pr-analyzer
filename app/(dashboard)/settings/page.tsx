@@ -37,7 +37,7 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl animate-fade-in">
-      <h2 className="mb-6 text-2xl font-bold text-[var(--color-text-primary)]">API Ayarlari</h2>
+      <h2 className="mb-6 text-2xl font-bold text-[var(--color-text-primary)]">API Ayarları</h2>
 
       {status && (
         <div className="mb-6 rounded-lg bg-[var(--color-bg-primary)] p-4 shadow-sm">
@@ -50,7 +50,7 @@ export default function SettingsPage() {
                 }`}
               />
               <span className="text-[var(--color-text-secondary)]">
-                GitHub Token: {status.hasGithubToken ? "Kayitli" : "Yok"}
+                GitHub Token: {status.hasGithubToken ? "Kayıtlı" : "Yok"}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -60,7 +60,7 @@ export default function SettingsPage() {
                 }`}
               />
               <span className="text-[var(--color-text-secondary)]">
-                Claude API Key: {status.hasClaudeApiKey ? "Kayitli" : "Yok"}
+                Claude API Key: {status.hasClaudeApiKey ? "Kayıtlı" : "Yok"}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -70,11 +70,11 @@ export default function SettingsPage() {
                 }`}
               />
               <span className="text-[var(--color-text-secondary)]">
-                OpenAI API Key: {status.hasOpenaiApiKey ? "Kayitli" : "Yok"}
+                OpenAI API Key: {status.hasOpenaiApiKey ? "Kayıtlı" : "Yok"}
               </span>
             </div>
             <div className="text-[var(--color-text-muted)]">
-              AI Saglayici: {status.aiProvider}
+              AI Sağlayıcı: {status.aiProvider}
             </div>
           </div>
         </div>

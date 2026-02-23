@@ -32,7 +32,7 @@ export default function DashboardPage() {
           return;
         }
         if (!res.ok) {
-          setError("Repolar yuklenirken hata olustu");
+          setError("Repolar yüklenirken hata oluştu");
           setLoading(false);
           return;
         }
@@ -85,9 +85,9 @@ export default function DashboardPage() {
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-[var(--color-text-muted)]">
             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
           </svg>
-          <h3 className="mb-1 text-lg font-semibold text-[var(--color-text-primary)]">Repo bulunamadi</h3>
+          <h3 className="mb-1 text-lg font-semibold text-[var(--color-text-primary)]">Repo bulunamadı</h3>
           <p className="text-sm text-[var(--color-text-muted)]">
-            {search ? "Arama kriterlerinize uygun repo bulunamadi." : "GitHub hesabinizda repo bulunamadi."}
+            {search ? "Arama kriterlerinize uygun repo bulunamadı." : "GitHub hesabınızda repo bulunamadı."}
           </p>
         </div>
       ) : (

@@ -14,7 +14,7 @@ export function NavHeader() {
         <button
           onClick={toggle}
           className="rounded-lg p-2 hover:bg-[var(--color-bg-tertiary)] md:hidden"
-          aria-label="Menu ac/kapat"
+          aria-label="Menü aç/kapat"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="3" y1="6" x2="21" y2="6"/>
@@ -31,7 +31,7 @@ export function NavHeader() {
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="rounded-lg px-3 py-1.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
         >
-          Cikis Yap
+          Çıkış Yap
         </button>
       </div>
     </header>

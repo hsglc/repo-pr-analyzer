@@ -26,7 +26,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (result?.error) {
-      setError("Email veya sifre hatali");
+      setError("Email veya şifre hatalı");
     } else {
       router.push("/dashboard");
     }
@@ -34,7 +34,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <h1 className="mb-6 text-center text-2xl font-bold text-[var(--color-text-primary)]">Giris Yap</h1>
+      <h1 className="mb-6 text-center text-2xl font-bold text-[var(--color-text-primary)]">Giriş Yap</h1>
 
       {error && (
         <div className="mb-4 rounded-lg p-3 text-sm" style={{ backgroundColor: "var(--color-danger-light)", color: "var(--color-danger)" }}>
@@ -45,7 +45,7 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="mb-1 block text-sm font-medium text-[var(--color-text-primary)]">
-            Email
+            E-posta
           </label>
           <input
             id="email"
@@ -59,7 +59,7 @@ export default function LoginPage() {
 
         <div>
           <label htmlFor="password" className="mb-1 block text-sm font-medium text-[var(--color-text-primary)]">
-            Sifre
+            Şifre
           </label>
           <input
             id="password"
@@ -76,14 +76,14 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full rounded-lg bg-[var(--color-accent)] px-4 py-2 text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50 active:scale-95 transition-all"
         >
-          {loading ? "Giris yapiliyor..." : "Giris Yap"}
+          {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
         </button>
       </form>
 
       <p className="mt-4 text-center text-sm text-[var(--color-text-secondary)]">
-        Hesabiniz yok mu?{" "}
+        Hesabınız yok mu?{" "}
         <Link href="/register" className="text-[var(--color-accent)] hover:underline">
-          Kayit Ol
+          Kayıt Ol
         </Link>
       </p>
     </>

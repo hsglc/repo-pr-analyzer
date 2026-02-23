@@ -8,7 +8,7 @@ import { GitHubPlatform } from "@/lib/core/platforms/github-platform";
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   const userId = (session.user as { id: string }).id;
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   try {
     const apiKeys = await findApiKeysByUserId(userId);
     if (!apiKeys?.githubToken) {
-      return NextResponse.json({ error: "GitHub token bulunamadi" }, { status: 400 });
+      return NextResponse.json({ error: "GitHub token bulunamadı" }, { status: 400 });
     }
 
     const githubToken = decrypt(apiKeys.githubToken);
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
         platform.getPRHeadSha(prNum),
       ]);
     } catch (innerError) {
-      console.error("Status: GitHub/Firebase hatasi:", innerError);
+      console.error("Status: GitHub/Firebase hatası:", innerError);
       // Try just the analysis history without SHA comparison
       try {
         latestAnalysis = await getLatestAnalysis(userId, `${owner}/${repo}`, prNum);
@@ -76,6 +76,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Status check error:", error);
-    return NextResponse.json({ error: "Durum kontrolu basarisiz" }, { status: 500 });
+    return NextResponse.json({ error: "Durum kontrolü başarısız" }, { status: 500 });
   }
 }

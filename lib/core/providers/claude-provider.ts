@@ -1,8 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import type { AIProvider } from "./ai-provider";
-import type { ImpactResult, TestScenario } from "../types";
-import { buildTestGenerationPrompt } from "../generators/prompts";
+import type { CodeReviewItem, ImpactResult, TestScenario } from "../types";
+import { buildTestGenerationPrompt, buildCodeReviewPrompt } from "../generators/prompts";
 
 const TestScenarioSchema = z.object({
   id: z.string(),
@@ -14,8 +14,23 @@ const TestScenarioSchema = z.object({
   expectedResult: z.string(),
 });
 
-const ResponseSchema = z.object({
+const TestResponseSchema = z.object({
   scenarios: z.array(TestScenarioSchema),
+});
+
+const CodeReviewItemSchema = z.object({
+  id: z.string(),
+  file: z.string(),
+  line: z.number().optional(),
+  severity: z.enum(["critical", "warning", "info", "suggestion"]),
+  category: z.enum(["bug", "security", "performance", "maintainability", "style"]),
+  title: z.string(),
+  description: z.string(),
+  suggestion: z.string().optional(),
+});
+
+const CodeReviewResponseSchema = z.object({
+  items: z.array(CodeReviewItemSchema),
 });
 
 export class ClaudeProvider implements AIProvider {
@@ -25,13 +40,26 @@ export class ClaudeProvider implements AIProvider {
     this.client = new Anthropic({ apiKey });
   }
 
-  async generateTestScenarios(
-    impact: ImpactResult,
-    diffSummary: string,
-    maxScenarios: number
-  ): Promise<TestScenario[]> {
-    const prompt = buildTestGenerationPrompt(impact, diffSummary, maxScenarios);
+  private extractJSON(text: string): string {
+    // Pattern 1: ```json block
+    const jsonBlockMatch = text.match(/```json\s*\n([\s\S]*?)\n```/);
+    if (jsonBlockMatch) return jsonBlockMatch[1];
 
+    // Pattern 2: ``` block (without json label)
+    const codeBlockMatch = text.match(/```\s*\n([\s\S]*?)\n```/);
+    if (codeBlockMatch) return codeBlockMatch[1];
+
+    // Pattern 3: First { to last }
+    const firstBrace = text.indexOf("{");
+    const lastBrace = text.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      return text.substring(firstBrace, lastBrace + 1);
+    }
+
+    throw new Error("Claude yanıtından JSON parse edilemedi");
+  }
+
+  private async callClaude(prompt: string): Promise<string> {
     const response = await this.client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 4096,
@@ -40,39 +68,31 @@ export class ClaudeProvider implements AIProvider {
 
     const textBlock = response.content.find((block) => block.type === "text");
     if (!textBlock || textBlock.type !== "text") {
-      throw new Error("Claude'dan metin yaniti alinamadi");
+      throw new Error("Claude'dan metin yanıtı alınamadı");
     }
 
-    let jsonStr: string | null = null;
+    return this.extractJSON(textBlock.text);
+  }
 
-    // Pattern 1: ```json block
-    const jsonBlockMatch = textBlock.text.match(/```json\s*\n([\s\S]*?)\n```/);
-    if (jsonBlockMatch) {
-      jsonStr = jsonBlockMatch[1];
-    }
-
-    // Pattern 2: ``` block (without json label)
-    if (!jsonStr) {
-      const codeBlockMatch = textBlock.text.match(/```\s*\n([\s\S]*?)\n```/);
-      if (codeBlockMatch) {
-        jsonStr = codeBlockMatch[1];
-      }
-    }
-
-    // Pattern 3: First { to last }
-    if (!jsonStr) {
-      const firstBrace = textBlock.text.indexOf("{");
-      const lastBrace = textBlock.text.lastIndexOf("}");
-      if (firstBrace !== -1 && lastBrace > firstBrace) {
-        jsonStr = textBlock.text.substring(firstBrace, lastBrace + 1);
-      }
-    }
-
-    if (!jsonStr) {
-      throw new Error("Claude yanitindan JSON parse edilemedi");
-    }
-
-    const parsed = ResponseSchema.parse(JSON.parse(jsonStr));
+  async generateTestScenarios(
+    impact: ImpactResult,
+    diffSummary: string,
+    maxScenarios: number
+  ): Promise<TestScenario[]> {
+    const prompt = buildTestGenerationPrompt(impact, diffSummary, maxScenarios);
+    const jsonStr = await this.callClaude(prompt);
+    const parsed = TestResponseSchema.parse(JSON.parse(jsonStr));
     return parsed.scenarios;
+  }
+
+  async generateCodeReview(
+    impact: ImpactResult,
+    diffContent: string,
+    maxItems: number
+  ): Promise<CodeReviewItem[]> {
+    const prompt = buildCodeReviewPrompt(impact, diffContent, maxItems);
+    const jsonStr = await this.callClaude(prompt);
+    const parsed = CodeReviewResponseSchema.parse(JSON.parse(jsonStr));
+    return parsed.items;
   }
 }

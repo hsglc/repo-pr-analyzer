@@ -35,7 +35,7 @@ export default function PullsPage() {
           `/api/repos/${params.owner}/${params.repo}/pulls`
         );
         if (!res.ok) {
-          setError("PR'lar yuklenirken hata olustu");
+          setError("PR'lar yüklenirken hata oluştu");
           setLoading(false);
           return;
         }
@@ -77,10 +77,10 @@ export default function PullsPage() {
             href="/dashboard"
             className="text-sm text-[var(--color-accent)] hover:underline"
           >
-            &larr; Repolara don
+            &larr; Repolara dön
           </Link>
           <h2 className="mt-2 text-2xl font-bold text-[var(--color-text-primary)]">
-            {params.owner}/{params.repo} - Acik PR&apos;lar
+            {params.owner}/{params.repo} - Açık PR&apos;ler
           </h2>
         </div>
         <PRListSkeleton />
@@ -99,10 +99,10 @@ export default function PullsPage() {
           href="/dashboard"
           className="text-sm text-[var(--color-accent)] hover:underline"
         >
-          &larr; Repolara don
+          &larr; Repolara dön
         </Link>
         <h2 className="mt-2 text-2xl font-bold text-[var(--color-text-primary)]">
-          {params.owner}/{params.repo} - Acik PR&apos;lar
+          {params.owner}/{params.repo} - Açık PR&apos;ler
         </h2>
       </div>
 
@@ -113,8 +113,8 @@ export default function PullsPage() {
             <line x1="12" y1="8" x2="12" y2="12"/>
             <line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
-          <h3 className="mb-1 text-lg font-semibold text-[var(--color-text-primary)]">Acik PR bulunamadi</h3>
-          <p className="text-sm text-[var(--color-text-muted)]">Bu repoda su an acik pull request bulunmuyor.</p>
+          <h3 className="mb-1 text-lg font-semibold text-[var(--color-text-primary)]">Açık PR bulunamadi</h3>
+          <p className="text-sm text-[var(--color-text-muted)]">Bu depoda şu an açık PR bulunmuyor.</p>
         </div>
       ) : (
         <div className="space-y-3">

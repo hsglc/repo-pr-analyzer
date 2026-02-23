@@ -8,7 +8,7 @@ import { encrypt } from "@/lib/encryption";
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   const userId = (session.user as { id: string }).id;
@@ -23,16 +23,16 @@ export async function GET() {
 }
 
 const UpdateSchema = z.object({
-  githubToken: z.string().min(1, "GitHub token gerekli").max(500, "Token cok uzun"),
-  claudeApiKey: z.string().max(500, "API key cok uzun").optional(),
-  openaiApiKey: z.string().max(500, "API key cok uzun").optional(),
+  githubToken: z.string().min(1, "GitHub token zorunlu").max(500, "Token çok uzun"),
+  claudeApiKey: z.string().max(500, "API key çok uzun").optional(),
+  openaiApiKey: z.string().max(500, "API key çok uzun").optional(),
   aiProvider: z.enum(["claude", "openai"]).default("claude"),
 });
 
 export async function PUT(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   try {

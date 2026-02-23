@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
-import { findApiKeysByUserId, saveAnalysis } from "@/lib/db";
+import { findApiKeysByUserId } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
-import { runAnalysis } from "@/lib/analysis-service";
+import { runCodeReview } from "@/lib/analysis-service";
 
-const AnalyzeSchema = z.object({
+const CodeReviewSchema = z.object({
   owner: z.string().min(1),
   repo: z.string().min(1),
   prNumber: z.number().int().positive(),
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   try {
     const userId = (session.user as { id: string }).id;
     const body = await request.json();
-    const { owner, repo, prNumber } = AnalyzeSchema.parse(body);
+    const { owner, repo, prNumber } = CodeReviewSchema.parse(body);
 
     const apiKeys = await findApiKeysByUserId(userId);
     if (!apiKeys?.githubToken) {
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       aiApiKey = decrypt(apiKeys.claudeApiKey);
     }
 
-    const { report, configSource, headSha } = await runAnalysis({
+    const { codeReview, headSha } = await runCodeReview({
       owner,
       repo,
       prNumber,
@@ -53,25 +53,12 @@ export async function POST(request: Request) {
       userId,
     });
 
-    // Save to Firebase (non-critical - don't let save failure break the response)
-    try {
-      await saveAnalysis(userId, `${owner}/${repo}`, prNumber, {
-        report: JSON.stringify(report),
-        commitSha: headSha,
-        prTitle: report.prTitle,
-        createdAt: new Date().toISOString(),
-        configSource,
-      });
-    } catch (saveError) {
-      console.error("Analiz kaydedilemedi (Firebase):", saveError);
-    }
-
-    return NextResponse.json({ ...report, commitSha: headSha });
+    return NextResponse.json({ codeReview, commitSha: headSha });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
     }
-    console.error("Analyze error:", error);
-    return NextResponse.json({ error: "Analiz sırasında hata oluştu" }, { status: 500 });
+    console.error("Code review error:", error);
+    return NextResponse.json({ error: "Kod inceleme sırasında hata oluştu" }, { status: 500 });
   }
 }

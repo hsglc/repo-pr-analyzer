@@ -27,7 +27,7 @@ export async function GET(
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   const { owner, repo } = await params;
@@ -35,7 +35,7 @@ export async function GET(
   const apiKeys = await findApiKeysByUserId(userId);
 
   if (!apiKeys?.githubToken) {
-    return NextResponse.json({ error: "GitHub token bulunamadi" }, { status: 400 });
+    return NextResponse.json({ error: "GitHub token bulunamadı" }, { status: 400 });
   }
 
   try {
@@ -44,7 +44,7 @@ export async function GET(
 
     return NextResponse.json({ config, source });
   } catch {
-    return NextResponse.json({ error: "Config yuklenemedi" }, { status: 500 });
+    return NextResponse.json({ error: "Config yüklenemedi" }, { status: 500 });
   }
 }
 
@@ -54,7 +54,7 @@ export async function PUT(
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   try {
@@ -65,7 +65,7 @@ export async function PUT(
     const parsed = ImpactMapConfigSchema.safeParse(body.config);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Gecersiz config formati", details: parsed.error.flatten() },
+        { error: "Geçersiz config formatı", details: parsed.error.flatten() },
         { status: 400 }
       );
     }
@@ -85,7 +85,7 @@ export async function POST(
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   try {
@@ -94,7 +94,7 @@ export async function POST(
     const apiKeys = await findApiKeysByUserId(userId);
 
     if (!apiKeys?.githubToken) {
-      return NextResponse.json({ error: "GitHub token bulunamadi" }, { status: 400 });
+      return NextResponse.json({ error: "GitHub token bulunamadı" }, { status: 400 });
     }
 
     const githubToken = decrypt(apiKeys.githubToken);
@@ -108,6 +108,6 @@ export async function POST(
     return NextResponse.json({ config, source: "auto-detected" });
   } catch (error) {
     console.error("Auto-detect config error:", error);
-    return NextResponse.json({ error: "Otomatik tespit basarisiz" }, { status: 500 });
+    return NextResponse.json({ error: "Otomatik tespit başarısız" }, { status: 500 });
   }
 }

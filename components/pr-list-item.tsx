@@ -91,7 +91,7 @@ export function PRListItem({
         href={`/dashboard/${owner}/${repo}/pulls/${pr.number}`}
         className="ml-4 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm text-white hover:bg-[var(--color-accent-hover)] active:scale-95 transition-all"
       >
-        {analysisSummary ? "Analizi Gor" : "Analiz Et"}
+        {analysisSummary ? "Analizi Gör" : "Analiz Et"}
       </Link>
     </div>
   );

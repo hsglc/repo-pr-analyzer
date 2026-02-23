@@ -78,7 +78,7 @@ export function ScenarioDetail({
         <div className="border-t border-[var(--color-border)] p-4">
           <div className="mb-3 flex gap-4 text-sm text-[var(--color-text-secondary)]">
             <span>
-              <strong>Feature:</strong> {scenario.feature}
+              <strong>Özellik:</strong> {scenario.feature}
             </span>
             <span>
               <strong>Tip:</strong> {scenario.type}
@@ -86,7 +86,7 @@ export function ScenarioDetail({
           </div>
 
           <div className="mb-3">
-            <h4 className="mb-1 text-sm font-semibold text-[var(--color-text-primary)]">Adimlar:</h4>
+            <h4 className="mb-1 text-sm font-semibold text-[var(--color-text-primary)]">Adımlar:</h4>
             <ol className="list-inside list-decimal space-y-1 text-sm text-[var(--color-text-secondary)]">
               {scenario.steps.map((step, i) => (
                 <li key={i}>{step}</li>
@@ -95,7 +95,7 @@ export function ScenarioDetail({
           </div>
 
           <div>
-            <h4 className="mb-1 text-sm font-semibold text-[var(--color-text-primary)]">Beklenen Sonuc:</h4>
+            <h4 className="mb-1 text-sm font-semibold text-[var(--color-text-primary)]">Beklenen Sonuç:</h4>
             <p className="text-sm text-[var(--color-text-secondary)]">{scenario.expectedResult}</p>
           </div>
         </div>

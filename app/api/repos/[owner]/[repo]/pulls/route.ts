@@ -11,7 +11,7 @@ export async function GET(
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   const { owner, repo } = await params;
@@ -19,7 +19,7 @@ export async function GET(
   const apiKeys = await findApiKeysByUserId(userId);
 
   if (!apiKeys?.githubToken) {
-    return NextResponse.json({ error: "GitHub token bulunamadi" }, { status: 400 });
+    return NextResponse.json({ error: "GitHub token bulunamadı" }, { status: 400 });
   }
 
   try {
@@ -52,7 +52,7 @@ export async function GET(
     return NextResponse.json(mapped);
   } catch {
     return NextResponse.json(
-      { error: "PR'lar yuklenirken hata olustu" },
+      { error: "PR'lar yüklenirken hata oluştu" },
       { status: 500 }
     );
   }

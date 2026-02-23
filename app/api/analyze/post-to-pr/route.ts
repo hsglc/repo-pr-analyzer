@@ -33,12 +33,24 @@ const TestScenarioSchema = z.object({
   expectedResult: z.string(),
 });
 
+const CodeReviewItemSchema = z.object({
+  id: z.string(),
+  file: z.string(),
+  line: z.number().optional(),
+  severity: z.enum(["critical", "warning", "info", "suggestion"]),
+  category: z.enum(["bug", "security", "performance", "maintainability", "style"]),
+  title: z.string(),
+  description: z.string(),
+  suggestion: z.string().optional(),
+});
+
 const AnalysisReportSchema = z.object({
   prNumber: z.number(),
   prTitle: z.string(),
   timestamp: z.string(),
   impact: ImpactResultSchema,
   testScenarios: z.array(TestScenarioSchema),
+  codeReview: z.array(CodeReviewItemSchema).default([]),
   stats: z.object({
     filesChanged: z.number(),
     additions: z.number(),
@@ -57,7 +69,7 @@ const PostSchema = z.object({
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   try {
@@ -67,7 +79,7 @@ export async function POST(request: Request) {
 
     const apiKeys = await findApiKeysByUserId(userId);
     if (!apiKeys?.githubToken) {
-      return NextResponse.json({ error: "GitHub token bulunamadi" }, { status: 400 });
+      return NextResponse.json({ error: "GitHub token bulunamadı" }, { status: 400 });
     }
 
     const githubToken = decrypt(apiKeys.githubToken);
@@ -80,9 +92,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Gecersiz rapor formati" }, { status: 400 });
+      return NextResponse.json({ error: "Geçersiz rapor formatı" }, { status: 400 });
     }
     console.error("Post to PR error:", error);
-    return NextResponse.json({ error: "Comment yazilamadi" }, { status: 500 });
+    return NextResponse.json({ error: "Yorum yazılamadı" }, { status: 500 });
   }
 }

@@ -8,7 +8,7 @@ import { decrypt } from "@/lib/encryption";
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   const userId = (session.user as { id: string }).id;
@@ -16,7 +16,7 @@ export async function GET() {
 
   if (!apiKeys?.githubToken) {
     return NextResponse.json(
-      { error: "GitHub token bulunamadi. Lutfen ayarlardan ekleyin." },
+      { error: "GitHub token bulunamadı. Lütfen ayarlardan ekleyin." },
       { status: 400 }
     );
   }
@@ -44,7 +44,7 @@ export async function GET() {
     return NextResponse.json(mapped);
   } catch {
     return NextResponse.json(
-      { error: "Repolar yuklenirken hata olustu" },
+      { error: "Repolar yüklenirken hata oluştu" },
       { status: 500 }
     );
   }

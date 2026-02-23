@@ -18,7 +18,7 @@ export default function RegisterPage() {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("Sifreler eslesmiyor");
+      setError("Şifreler eşleşmiyor");
       return;
     }
 
@@ -34,7 +34,7 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Kayit sirasinda hata olustu");
+        setError(data.error || "Kayıt sırasında hata oluştu");
         setLoading(false);
         return;
       }
@@ -61,13 +61,13 @@ export default function RegisterPage() {
       }
     } catch {
       setLoading(false);
-      setError("Bir hata olustu");
+      setError("Bir hata oluştu");
     }
   }
 
   return (
     <>
-      <h1 className="mb-6 text-center text-2xl font-bold text-[var(--color-text-primary)]">Kayit Ol</h1>
+      <h1 className="mb-6 text-center text-2xl font-bold text-[var(--color-text-primary)]">Kayıt Ol</h1>
 
       {error && (
         <div className="mb-4 rounded-lg p-3 text-sm" style={{ backgroundColor: "var(--color-danger-light)", color: "var(--color-danger)" }}>
@@ -78,7 +78,7 @@ export default function RegisterPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="mb-1 block text-sm font-medium text-[var(--color-text-primary)]">
-            Email
+            E-posta
           </label>
           <input
             id="email"
@@ -92,7 +92,7 @@ export default function RegisterPage() {
 
         <div>
           <label htmlFor="password" className="mb-1 block text-sm font-medium text-[var(--color-text-primary)]">
-            Sifre
+            Şifre
           </label>
           <input
             id="password"
@@ -107,7 +107,7 @@ export default function RegisterPage() {
 
         <div>
           <label htmlFor="confirm" className="mb-1 block text-sm font-medium text-[var(--color-text-primary)]">
-            Sifre Tekrar
+            Şifre Tekrar
           </label>
           <input
             id="confirm"
@@ -125,14 +125,14 @@ export default function RegisterPage() {
           disabled={loading}
           className="w-full rounded-lg bg-[var(--color-accent)] px-4 py-2 text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50 active:scale-95 transition-all"
         >
-          {loading ? "Kayit yapiliyor..." : "Kayit Ol"}
+          {loading ? "Kayıt yapılıyor..." : "Kayıt Ol"}
         </button>
       </form>
 
       <p className="mt-4 text-center text-sm text-[var(--color-text-secondary)]">
-        Zaten hesabiniz var mi?{" "}
+        Zaten hesabınız var mı?{" "}
         <Link href="/login" className="text-[var(--color-accent)] hover:underline">
-          Giris Yap
+          Giriş Yap
         </Link>
       </p>
     </>

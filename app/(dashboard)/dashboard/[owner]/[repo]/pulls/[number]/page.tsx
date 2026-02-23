@@ -6,7 +6,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { AnalysisResult } from "@/components/analysis-result";
 import { AnalysisSkeleton } from "@/components/skeletons";
-import type { AnalysisReport } from "@/lib/core/types";
+import type { AnalysisReport, CodeReviewItem } from "@/lib/core/types";
 
 interface AnalysisStatus {
   hasHistory: boolean;
@@ -58,6 +58,11 @@ export default function AnalysisPage() {
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
   const [statusInfo, setStatusInfo] = useState<{ needsReanalysis: boolean; currentHeadSha: string } | null>(null);
 
+  // Code review state
+  const [codeReview, setCodeReview] = useState<CodeReviewItem[]>([]);
+  const [reviewing, setReviewing] = useState(false);
+  const [postingReview, setPostingReview] = useState(false);
+
   // Checkbox state
   const [checkedIds, setCheckedIds] = useState<Record<string, boolean>>({});
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -80,7 +85,7 @@ export default function AnalysisPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Analiz sirasinda hata olustu");
+        setError(data.error || "Analiz sırasında hata oluştu");
         setAnalyzing(false);
         return;
       }
@@ -91,15 +96,72 @@ export default function AnalysisPage() {
       setCommitSha(sha || "");
       setStatusInfo((prev) => prev ? { ...prev, needsReanalysis: false, currentHeadSha: sha || prev.currentHeadSha } : null);
     } catch {
-      setError("Analiz sirasinda beklenmeyen bir hata olustu");
+      setError("Analiz sırasında beklenmeyen bir hata oluştu");
     }
     setAnalyzing(false);
   }, [params.owner, params.repo, prNumber]);
 
+  const runCodeReview = useCallback(async () => {
+    setReviewing(true);
+    try {
+      const res = await fetch("/api/analyze/code-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          owner: params.owner,
+          repo: params.repo,
+          prNumber,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Kod inceleme sırasında hata oluştu");
+        setReviewing(false);
+        return;
+      }
+
+      const data = await res.json();
+      setCodeReview(data.codeReview || []);
+      toast.success(`Kod inceleme tamamlandı: ${data.codeReview?.length || 0} bulgu`);
+    } catch {
+      toast.error("Kod inceleme sırasında beklenmeyen bir hata oluştu");
+    }
+    setReviewing(false);
+  }, [params.owner, params.repo, prNumber]);
+
+  async function handlePostReviewToGitHub() {
+    if (codeReview.length === 0) return;
+    setPostingReview(true);
+
+    try {
+      const res = await fetch("/api/analyze/post-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          owner: params.owner,
+          repo: params.repo,
+          prNumber,
+          codeReview,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Review başarıyla GitHub'a gönderildi!");
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Review gönderilirken hata oluştu");
+      }
+    } catch {
+      toast.error("Review gönderilirken hata oluştu");
+    }
+    setPostingReview(false);
+  }
+
   // Load status on mount - NO auto-analysis
   useEffect(() => {
     if (!isValidPR) {
-      setError("Gecersiz PR numarasi");
+      setError("Geçersiz PR numarası");
       setLoading(false);
       return;
     }
@@ -204,7 +266,7 @@ export default function AnalysisPage() {
         setHistory(data.history || []);
       }
     } catch {
-      toast.error("Gecmis yuklenemedi");
+      toast.error("Geçmiş yüklenemedi");
     }
     setHistoryLoading(false);
   }
@@ -221,7 +283,7 @@ export default function AnalysisPage() {
         setHistoryReport(data.report);
       }
     } catch {
-      toast.error("Analiz detayi yuklenemedi");
+      toast.error("Analiz detayı yüklenemedi");
     }
   }
 
@@ -237,24 +299,25 @@ export default function AnalysisPage() {
           owner: params.owner,
           repo: params.repo,
           prNumber,
-          report,
+          report: { ...report, codeReview },
         }),
       });
 
       if (res.ok) {
-        toast.success("Comment basariyla PR'a yazildi!");
+        toast.success("Yorum başarıyla PR'a yazıldı!");
       } else {
         const data = await res.json();
-        toast.error(data.error || "Comment yazilirken hata olustu");
+        toast.error(data.error || "Yorum yazılırken hata oluştu");
       }
     } catch {
-      toast.error("Comment yazilirken hata olustu");
+      toast.error("Yorum yazılırken hata oluştu");
     }
     setPosting(false);
   }
 
   async function handleReanalyze() {
     setError("");
+    setCodeReview([]);
     await runNewAnalysis();
     setHistory([]);
   }
@@ -271,7 +334,7 @@ export default function AnalysisPage() {
           href={`/dashboard/${params.owner}/${params.repo}/pulls`}
           className="text-sm text-[var(--color-accent)] hover:underline"
         >
-          &larr; PR listesine don
+          &larr; PR listesine dön
         </Link>
         <h2 className="mt-2 text-2xl font-bold text-[var(--color-text-primary)]">
           PR #{params.number} Analizi
@@ -300,7 +363,7 @@ export default function AnalysisPage() {
             </>
           ) : (
             <span className="text-sm font-medium">
-              Son commit ile guncel ({commitSha.substring(0, 7)})
+              Son commit ile güncel ({commitSha.substring(0, 7)})
             </span>
           )}
         </div>
@@ -314,10 +377,10 @@ export default function AnalysisPage() {
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <h3 className="mb-2 text-lg font-semibold text-[var(--color-text-primary)]">
-            Henuz analiz yapilmadi
+            Henüz analiz yapılmadı
           </h3>
           <p className="mb-6 text-sm text-[var(--color-text-muted)]">
-            Bu PR icin henuz bir analiz bulunmuyor. Analiz baslatmak icin asagidaki butona tiklayin.
+            Bu PR için henüz bir analiz bulunmuyor. Analiz başlatmak için aşağıdaki butona tıklayın.
           </p>
           <button
             onClick={handleFirstAnalysis}
@@ -339,7 +402,7 @@ export default function AnalysisPage() {
                 : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             }`}
           >
-            Guncel Analiz
+            Güncel Analiz
           </button>
           <button
             onClick={() => {
@@ -352,7 +415,7 @@ export default function AnalysisPage() {
                 : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             }`}
           >
-            Gecmis Analizler
+            Geçmiş Analizler
           </button>
         </div>
       )}
@@ -370,21 +433,50 @@ export default function AnalysisPage() {
             report={report}
             checkedIds={checkedIds}
             onToggleCheck={handleToggleCheck}
+            codeReview={codeReview}
           />
 
-          <div className="mt-6 flex items-center gap-4">
+          {/* Action Buttons */}
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
               onClick={handlePostToPR}
               disabled={posting}
               className="rounded-lg bg-[var(--color-success)] px-4 py-2 text-white hover:opacity-90 disabled:opacity-50 active:scale-95 transition-all"
             >
-              {posting ? "Yaziliyor..." : "PR'a Yaz"}
+              {posting ? "Yazılıyor..." : "PR'a Yaz"}
             </button>
+
+            <button
+              onClick={runCodeReview}
+              disabled={reviewing}
+              className="rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 disabled:opacity-50 active:scale-95 transition-all"
+            >
+              {reviewing ? (
+                <span className="flex items-center gap-2">
+                  <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  Kod İnceleniyor...
+                </span>
+              ) : "Kod İnceleme"}
+            </button>
+
+            {codeReview.length > 0 && (
+              <button
+                onClick={handlePostReviewToGitHub}
+                disabled={postingReview}
+                className="rounded-lg bg-orange-600 px-4 py-2 text-white hover:bg-orange-700 disabled:opacity-50 active:scale-95 transition-all"
+              >
+                {postingReview ? "Gönderiliyor..." : "GitHub'a Review Olarak Gönder"}
+              </button>
+            )}
+
             <Link
               href={`/settings/configs/${params.owner}/${params.repo}`}
               className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm hover:bg-[var(--color-bg-tertiary)] transition-colors"
             >
-              Yapilandirmayi Duzenle
+              Yapılandırmayı Düzenle
             </Link>
           </div>
         </>
@@ -395,13 +487,13 @@ export default function AnalysisPage() {
         <div>
           {historyLoading && (
             <div className="py-8 text-center text-[var(--color-text-muted)]">
-              Gecmis yukleniyor...
+              Geçmiş yükleniyor...
             </div>
           )}
 
           {!historyLoading && history.length === 0 && (
             <div className="py-8 text-center text-[var(--color-text-muted)]">
-              Henuz gecmis analiz bulunmuyor.
+              Henüz geçmiş analiz bulunmuyor.
             </div>
           )}
 
@@ -428,7 +520,7 @@ export default function AnalysisPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-[var(--color-text-muted)]">
-                        {item.filesChanged} dosya, {item.featuresAffected} ozellik
+                        {item.filesChanged} dosya, {item.featuresAffected} özellik
                       </span>
                       <span className="text-sm">
                         {RISK_EMOJI[item.riskLevel] || "⚪"} {item.riskLevel}
@@ -445,7 +537,7 @@ export default function AnalysisPage() {
             <div className="mt-6">
               {!historyReport ? (
                 <div className="py-4 text-center text-[var(--color-text-muted)]">
-                  Rapor yukleniyor...
+                  Rapor yükleniyor...
                 </div>
               ) : (
                 <AnalysisResult report={historyReport} />

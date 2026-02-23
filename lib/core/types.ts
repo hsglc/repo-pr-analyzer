@@ -45,12 +45,24 @@ export interface TestScenario {
   expectedResult: string;
 }
 
+export interface CodeReviewItem {
+  id: string;
+  file: string;
+  line?: number;
+  severity: "critical" | "warning" | "info" | "suggestion";
+  category: "bug" | "security" | "performance" | "maintainability" | "style";
+  title: string;
+  description: string;
+  suggestion?: string;
+}
+
 export interface AnalysisReport {
   prNumber: number;
   prTitle: string;
   timestamp: string;
   impact: ImpactResult;
   testScenarios: TestScenario[];
+  codeReview: CodeReviewItem[];
   stats: {
     filesChanged: number;
     additions: number;

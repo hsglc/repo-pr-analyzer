@@ -4,8 +4,8 @@ import { z } from "zod";
 import { findUserByEmail, createUser } from "@/lib/db";
 
 const RegisterSchema = z.object({
-  email: z.string().email("Gecerli bir email adresi girin"),
-  password: z.string().min(8, "Sifre en az 8 karakter olmali"),
+  email: z.string().email("Geçerli bir email adresi girin"),
+  password: z.string().min(8, "Şifre en az 8 karakter olmalı"),
 });
 
 export async function POST(request: Request) {
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     if (existing) {
       // Return same shape but without id to prevent auto-login
       return NextResponse.json(
-        { message: "Islem basarili. Lutfen giris yapin." },
+        { message: "İşlem başarılı. Lütfen giriş yapın." },
         { status: 200 }
       );
     }
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const user = await createUser(email, passwordHash);
 
     return NextResponse.json(
-      { id: user.id, message: "Islem basarili. Lutfen giris yapin." },
+      { id: user.id, message: "İşlem başarılı. Lütfen giriş yapın." },
       { status: 201 }
     );
   } catch (error) {
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       );
     }
     return NextResponse.json(
-      { error: "Kayit sirasinda bir hata olustu" },
+      { error: "Kayıt sırasında bir hata oluştu" },
       { status: 500 }
     );
   }

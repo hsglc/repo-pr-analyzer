@@ -7,7 +7,7 @@ export function ImpactSummary({ report }: { report: AnalysisReport }) {
   return (
     <div className="rounded-lg bg-[var(--color-bg-primary)] p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-bold text-[var(--color-text-primary)]">Etki Ozeti</h3>
+        <h3 className="text-lg font-bold text-[var(--color-text-primary)]">Etki Özeti</h3>
         <RiskBadge level={impact.riskLevel} />
       </div>
 
@@ -16,19 +16,19 @@ export function ImpactSummary({ report }: { report: AnalysisReport }) {
       <table className="w-full text-sm">
         <tbody>
           <tr className="border-b border-[var(--color-border)]">
-            <td className="py-2 text-[var(--color-text-muted)]">Degisen dosya</td>
+            <td className="py-2 text-[var(--color-text-muted)]">Değişen dosya</td>
             <td className="py-2 text-right font-medium text-[var(--color-text-primary)]">{stats.filesChanged}</td>
           </tr>
           <tr className="border-b border-[var(--color-border)]">
-            <td className="py-2 text-[var(--color-text-muted)]">Eklenen satir</td>
+            <td className="py-2 text-[var(--color-text-muted)]">Eklenen satır</td>
             <td className="py-2 text-right font-medium text-[var(--color-success)]">+{stats.additions}</td>
           </tr>
           <tr className="border-b border-[var(--color-border)]">
-            <td className="py-2 text-[var(--color-text-muted)]">Silinen satir</td>
+            <td className="py-2 text-[var(--color-text-muted)]">Silinen satır</td>
             <td className="py-2 text-right font-medium text-[var(--color-danger)]">-{stats.deletions}</td>
           </tr>
           <tr>
-            <td className="py-2 text-[var(--color-text-muted)]">Etkilenen feature</td>
+            <td className="py-2 text-[var(--color-text-muted)]">Etkilenen özellik</td>
             <td className="py-2 text-right font-medium text-[var(--color-text-primary)]">{stats.featuresAffected}</td>
           </tr>
         </tbody>
@@ -36,7 +36,7 @@ export function ImpactSummary({ report }: { report: AnalysisReport }) {
 
       {impact.features.length > 0 && (
         <div className="mt-4">
-          <h4 className="mb-2 text-sm font-semibold text-[var(--color-text-primary)]">Etkilenen Feature&apos;lar</h4>
+          <h4 className="mb-2 text-sm font-semibold text-[var(--color-text-primary)]">Etkilenen Özellikler</h4>
           <div className="space-y-1">
             {impact.features.map((f) => (
               <div key={f.name} className="flex items-center gap-2 text-sm">
@@ -47,7 +47,7 @@ export function ImpactSummary({ report }: { report: AnalysisReport }) {
                 />
                 <span className="font-medium text-[var(--color-text-primary)]">{f.name}</span>
                 <span className="text-[var(--color-text-muted)]">
-                  ({f.changeType === "direct" ? "dogrudan" : "dolayli"})
+                  ({f.changeType === "direct" ? "doğrudan" : "dolaylı"})
                 </span>
               </div>
             ))}

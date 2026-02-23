@@ -48,10 +48,10 @@ export function TestScenariosTable({
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-bold text-[var(--color-text-primary)]">
-          Test Senaryolari
+          Test Senaryoları
           {checkedIds ? (
             <span className="ml-2 text-sm font-normal text-[var(--color-text-muted)]">
-              ({checkedCount}/{scenarios.length} tamamlandi)
+              ({checkedCount}/{scenarios.length} tamamlandı)
             </span>
           ) : (
             <span className="ml-2 text-sm font-normal text-[var(--color-text-muted)]">
@@ -65,7 +65,7 @@ export function TestScenariosTable({
             onChange={(e) => setFilterType(e.target.value)}
             className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] px-2 py-1 text-sm text-[var(--color-text-primary)]"
           >
-            <option value="all">Tum tipler</option>
+            <option value="all">Tüm tipler</option>
             {types.map((t) => (
               <option key={t} value={t}>
                 {t}
@@ -77,10 +77,10 @@ export function TestScenariosTable({
             onChange={(e) => setSortBy(e.target.value as SortKey)}
             className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] px-2 py-1 text-sm text-[var(--color-text-primary)]"
           >
-            <option value="priority">Oncelik</option>
+            <option value="priority">Öncelik</option>
             <option value="id">ID</option>
             <option value="type">Tip</option>
-            <option value="feature">Feature</option>
+            <option value="feature">Özellik</option>
           </select>
         </div>
       </div>
@@ -104,9 +104,9 @@ export function TestScenariosTable({
             <line x1="12" y1="18" x2="12" y2="12"/>
             <line x1="9" y1="15" x2="15" y2="15"/>
           </svg>
-          <h3 className="mb-1 font-semibold text-[var(--color-text-primary)]">Senaryo bulunamadi</h3>
+          <h3 className="mb-1 font-semibold text-[var(--color-text-primary)]">Senaryo bulunamadı</h3>
           <p className="text-sm text-[var(--color-text-muted)]">
-            Filtreye uygun test senaryosu bulunamadi.
+            Filtreye uygun test senaryosu bulunamadı.
           </p>
         </div>
       )}

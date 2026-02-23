@@ -41,7 +41,7 @@ export function ConfigEditor({
         setParseError(null);
         setRawMode(false);
       } catch {
-        setParseError("Gecersiz JSON - mod degistirilemiyor");
+        setParseError("Geçersiz JSON - mod değiştirilemiyor");
       }
     } else {
       // Structured -> Raw: serialize structured state to JSON
@@ -58,7 +58,7 @@ export function ConfigEditor({
       setParseError(null);
       onSave(parsed);
     } catch {
-      setParseError("Gecersiz JSON formati");
+      setParseError("Geçersiz JSON formatı");
     }
   }
 
@@ -173,7 +173,7 @@ export function ConfigEditor({
           onClick={() => { setInlineInput(null); setInputValue(""); }}
           className="text-xs text-[var(--color-text-muted)] hover:underline"
         >
-          Iptal
+          İptal
         </button>
       </div>
     );
@@ -182,12 +182,12 @@ export function ConfigEditor({
   return (
     <div className="rounded-lg bg-[var(--color-bg-primary)] p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-semibold text-[var(--color-text-primary)]">Yapilandirma Editoru</h3>
+        <h3 className="font-semibold text-[var(--color-text-primary)]">Yapılandırma Editörü</h3>
         <button
           onClick={handleModeToggle}
           className="rounded border border-[var(--color-border)] px-3 py-1 text-sm hover:bg-[var(--color-bg-tertiary)] transition-colors"
         >
-          {rawMode ? "Yapisal Mod" : "Raw JSON"}
+          {rawMode ? "Yapisal Mod" : "Ham JSON"}
         </button>
       </div>
 
@@ -214,7 +214,7 @@ export function ConfigEditor({
               onClick={handleReset}
               className="rounded-lg border border-[var(--color-border)] px-4 py-2 hover:bg-[var(--color-bg-tertiary)] transition-colors"
             >
-              Sifirla
+              Sıfırla
             </button>
           </div>
         </div>
@@ -223,7 +223,7 @@ export function ConfigEditor({
           {/* Features */}
           <section>
             <div className="mb-2 flex items-center justify-between">
-              <h4 className="font-medium text-[var(--color-text-primary)]">Feature&apos;lar</h4>
+              <h4 className="font-medium text-[var(--color-text-primary)]">Özellikler</h4>
               {inlineInput?.type === "feature" ? null : (
                 <button
                   onClick={() => { setInlineInput({ type: "feature" }); setInputValue(""); }}
@@ -233,7 +233,7 @@ export function ConfigEditor({
                 </button>
               )}
             </div>
-            {inlineInput?.type === "feature" && renderInlineInput("Feature adi...")}
+            {inlineInput?.type === "feature" && renderInlineInput("Özellik adı...")}
             {Object.entries(features).map(([name, mapping]) => (
               <div key={name} className="mb-3 rounded border border-[var(--color-border)] p-3">
                 <div className="flex items-center justify-between">
@@ -253,7 +253,7 @@ export function ConfigEditor({
                       [name]: { ...prev[name], description: e.target.value },
                     }))
                   }
-                  placeholder="Aciklama"
+                  placeholder="Açıklama"
                   className="mt-1 w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-primary)] px-2 py-1 text-sm text-[var(--color-text-primary)]"
                 />
                 <div className="mt-2">
@@ -270,13 +270,13 @@ export function ConfigEditor({
                     </div>
                   ))}
                   {inlineInput?.type === "path" && inlineInput.parentKey === name
-                    ? renderInlineInput("Path pattern (glob)...")
+                    ? renderInlineInput("Dosya deseni (glob)...")
                     : (
                       <button
                         onClick={() => { setInlineInput({ type: "path", parentKey: name }); setInputValue(""); }}
                         className="mt-1 text-xs text-[var(--color-accent)] hover:underline"
                       >
-                        + Path Ekle
+                        + Yol Ekle
                       </button>
                     )}
                 </div>
@@ -303,7 +303,7 @@ export function ConfigEditor({
                 <div>
                   <span className="font-medium text-sm text-[var(--color-text-primary)]">{name}</span>
                   <span className="ml-2 text-xs text-[var(--color-text-muted)]">
-                    {patterns.length} pattern
+                    {patterns.length} desen
                   </span>
                 </div>
                 <button
@@ -335,7 +335,7 @@ export function ConfigEditor({
                 <div>
                   <span className="font-medium text-sm text-[var(--color-text-primary)]">{name}</span>
                   <span className="ml-2 text-xs text-[var(--color-text-muted)]">
-                    {patterns.length} pattern
+                    {patterns.length} desen
                   </span>
                 </div>
                 <button
@@ -351,7 +351,7 @@ export function ConfigEditor({
           {/* Ignore Patterns */}
           <section>
             <div className="mb-2 flex items-center justify-between">
-              <h4 className="font-medium text-[var(--color-text-primary)]">Yok Sayilacak Desenler</h4>
+              <h4 className="font-medium text-[var(--color-text-primary)]">Yok Sayılacak Desenler</h4>
               {inlineInput?.type === "pattern" ? null : (
                 <button
                   onClick={() => { setInlineInput({ type: "pattern" }); setInputValue(""); }}
@@ -361,7 +361,7 @@ export function ConfigEditor({
                 </button>
               )}
             </div>
-            {inlineInput?.type === "pattern" && renderInlineInput("Ignore pattern (glob)...")}
+            {inlineInput?.type === "pattern" && renderInlineInput("Yoksayma deseni (glob)...")}
             <div className="space-y-1">
               {ignorePatterns.map((p, i) => (
                 <div key={i} className="flex items-center gap-1 text-sm">
@@ -391,7 +391,7 @@ export function ConfigEditor({
               onClick={handleReset}
               className="rounded-lg border border-[var(--color-border)] px-4 py-2 hover:bg-[var(--color-bg-tertiary)] transition-colors"
             >
-              Sifirla
+              Sıfırla
             </button>
           </div>
         </div>

@@ -6,7 +6,7 @@ import { getAnalysisHistory } from "@/lib/db";
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   const userId = (session.user as { id: string }).id;
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     if (id) {
       const entry = history.find((h) => h.id === id);
       if (!entry) {
-        return NextResponse.json({ error: "Analiz bulunamadi" }, { status: 404 });
+        return NextResponse.json({ error: "Analiz bulunamadı" }, { status: 404 });
       }
       return NextResponse.json({
         ...entry,
@@ -61,6 +61,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ history: summaries });
   } catch (error) {
     console.error("History error:", error);
-    return NextResponse.json({ error: "Gecmis yuklenemedi" }, { status: 500 });
+    return NextResponse.json({ error: "Geçmiş yüklenemedi" }, { status: 500 });
   }
 }

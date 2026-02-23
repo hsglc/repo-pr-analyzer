@@ -27,10 +27,10 @@ export default function ConfigPage() {
           setConfig(data.config);
           setSource(data.source);
         } else {
-          toast.error("Config yuklenirken hata olustu");
+          toast.error("Config yüklenirken hata oluştu");
         }
       } catch {
-        toast.error("Config yuklenirken beklenmeyen bir hata olustu");
+        toast.error("Config yüklenirken beklenmeyen bir hata oluştu");
       }
       setLoading(false);
     }
@@ -53,12 +53,12 @@ export default function ConfigPage() {
       if (res.ok) {
         setConfig(updated);
         setSource("database");
-        toast.success("Config basariyla kaydedildi");
+        toast.success("Config başarıyla kaydedildi");
       } else {
-        toast.error("Config kaydedilirken hata olustu");
+        toast.error("Config kaydedilirken hata oluştu");
       }
     } catch {
-      toast.error("Config kaydedilirken beklenmeyen bir hata olustu");
+      toast.error("Config kaydedilirken beklenmeyen bir hata oluştu");
     }
     setSaving(false);
   }
@@ -77,10 +77,10 @@ export default function ConfigPage() {
         toast.success("Config otomatik olarak tespit edildi");
       } else {
         const data = await res.json();
-        toast.error(data.error || "Otomatik tespit basarisiz");
+        toast.error(data.error || "Otomatik tespit başarısız");
       }
     } catch {
-      toast.error("Otomatik tespit sirasinda hata olustu");
+      toast.error("Otomatik tespit sırasında hata oluştu");
     }
     setDetecting(false);
   }
@@ -90,9 +90,9 @@ export default function ConfigPage() {
   }
 
   const sourceLabels: Record<string, string> = {
-    repo: "Repo (impact-map.config.json)",
-    database: "Veritabani",
-    default: "Varsayilan",
+    repo: "Depo (impact-map.config.json)",
+    database: "Veritabanı",
+    default: "Varsayılan",
     "auto-detected": "Otomatik Tespit",
   };
 
@@ -107,7 +107,7 @@ export default function ConfigPage() {
         </Link>
         <div className="mt-2 flex items-center gap-3">
           <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {params.owner}/{params.repo} - Etki Haritasi Yapilandirmasi
+            {params.owner}/{params.repo} - Etki Haritası Yapılandırması
           </h2>
           <button
             onClick={handleAutoDetect}

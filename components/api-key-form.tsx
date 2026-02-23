@@ -38,21 +38,21 @@ export function ApiKeyForm({
         const data = await res.json();
         toast.error(data.error || "Kaydedilemedi");
       } else {
-        toast.success("Basariyla kaydedildi!");
+        toast.success("Başarıyla kaydedildi!");
         setGithubToken("");
         setClaudeApiKey("");
         setOpenaiApiKey("");
         onSaved();
       }
     } catch {
-      toast.error("Bir hata olustu");
+      toast.error("Bir hata oluştu");
     }
     setLoading(false);
   }
 
   return (
     <form onSubmit={handleSubmit} className="rounded-lg bg-[var(--color-bg-primary)] p-6 shadow-sm">
-      <h3 className="mb-4 font-semibold text-[var(--color-text-primary)]">API Key&apos;leri Guncelle</h3>
+      <h3 className="mb-4 font-semibold text-[var(--color-text-primary)]">API Anahtarlarını Güncelle</h3>
 
       <div className="space-y-4">
         <div>
@@ -71,7 +71,7 @@ export function ApiKeyForm({
         </div>
 
         <div>
-          <label htmlFor="ai-provider" className="mb-1 block text-sm font-medium text-[var(--color-text-primary)]">AI Saglayici</label>
+          <label htmlFor="ai-provider" className="mb-1 block text-sm font-medium text-[var(--color-text-primary)]">AI Sağlayıcı</label>
           <select
             id="ai-provider"
             value={aiProvider}

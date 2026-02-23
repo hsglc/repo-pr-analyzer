@@ -30,7 +30,7 @@ export function DarkModeToggle() {
       onClick={toggle}
       role="switch"
       aria-checked={dark}
-      aria-label={dark ? "Acik temaya gec" : "Karanlik temaya gec"}
+      aria-label={dark ? "Açık temaya geç" : "Karanlık temaya geç"}
       className="relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-300 ease-in-out focus:outline-none active:scale-95"
       style={{
         backgroundColor: dark ? "var(--color-accent)" : "var(--color-text-muted)",

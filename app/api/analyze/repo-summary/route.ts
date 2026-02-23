@@ -6,7 +6,7 @@ import { getRepoAnalysisSummary } from "@/lib/db";
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   const userId = (session.user as { id: string }).id;
@@ -23,6 +23,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ summaries });
   } catch (error) {
     console.error("Repo summary error:", error);
-    return NextResponse.json({ error: "Ozet yuklenemedi" }, { status: 500 });
+    return NextResponse.json({ error: "Özet yüklenemedi" }, { status: 500 });
   }
 }

@@ -9,7 +9,7 @@ export default function DashboardError({
 }) {
   return (
     <div style={{ padding: "2rem", maxWidth: "600px", margin: "0 auto" }}>
-      <h2 style={{ color: "#dc2626", marginBottom: "1rem" }}>Bir hata olustu</h2>
+      <h2 style={{ color: "#dc2626", marginBottom: "1rem" }}>Bir hata oluştu</h2>
       <pre
         style={{
           background: "#fef2f2",

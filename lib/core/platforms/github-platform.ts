@@ -69,6 +69,29 @@ export class GitHubPlatform {
     return data.head.sha;
   }
 
+  async createReview(
+    prNumber: number,
+    body: string,
+    comments: { path: string; line?: number; body: string }[]
+  ): Promise<void> {
+    const reviewComments = comments
+      .filter((c) => c.line)
+      .map((c) => ({
+        path: c.path,
+        line: c.line!,
+        body: c.body,
+      }));
+
+    await this.octokit.pulls.createReview({
+      owner: this.owner,
+      repo: this.repo,
+      pull_number: prNumber,
+      body,
+      event: "COMMENT" as const,
+      comments: reviewComments.length > 0 ? reviewComments : undefined,
+    });
+  }
+
   async upsertComment(
     prNumber: number,
     body: string,
