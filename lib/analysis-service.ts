@@ -32,11 +32,11 @@ export async function runAnalysis(params: AnalysisParams): Promise<AnalysisResul
 
   // 2. Get diff + PR info
   const platform = new GitHubPlatform(githubToken, owner, repo);
-  const [rawDiff, prTitle, headSha] = await Promise.all([
+  const [rawDiff, prInfo] = await Promise.all([
     platform.getDiff(prNumber),
-    platform.getPRTitle(prNumber),
-    platform.getPRHeadSha(prNumber),
+    platform.getPRInfo(prNumber),
   ]);
+  const { title: prTitle, headSha } = prInfo;
 
   // 3. Parse diff
   const parser = new DiffParser();

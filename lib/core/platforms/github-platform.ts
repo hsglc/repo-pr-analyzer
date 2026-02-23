@@ -32,6 +32,15 @@ export class GitHubPlatform {
     return data.title;
   }
 
+  async getPRInfo(prNumber: number): Promise<{ title: string; headSha: string }> {
+    const { data } = await this.octokit.pulls.get({
+      owner: this.owner,
+      repo: this.repo,
+      pull_number: prNumber,
+    });
+    return { title: data.title, headSha: data.head.sha };
+  }
+
   async getRepoTree(): Promise<string[]> {
     const { data: repoData } = await this.octokit.repos.get({
       owner: this.owner,

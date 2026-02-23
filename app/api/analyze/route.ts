@@ -53,14 +53,18 @@ export async function POST(request: Request) {
       userId,
     });
 
-    // Save to Firebase
-    await saveAnalysis(userId, `${owner}/${repo}`, prNumber, {
-      report: JSON.stringify(report),
-      commitSha: headSha,
-      prTitle: report.prTitle,
-      createdAt: new Date().toISOString(),
-      configSource,
-    });
+    // Save to Firebase (non-critical - don't let save failure break the response)
+    try {
+      await saveAnalysis(userId, `${owner}/${repo}`, prNumber, {
+        report: JSON.stringify(report),
+        commitSha: headSha,
+        prTitle: report.prTitle,
+        createdAt: new Date().toISOString(),
+        configSource,
+      });
+    } catch (saveError) {
+      console.error("Analiz kaydedilemedi (Firebase):", saveError);
+    }
 
     return NextResponse.json({ ...report, commitSha: headSha });
   } catch (error) {

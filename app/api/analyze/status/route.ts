@@ -29,11 +29,27 @@ export async function GET(request: Request) {
 
     const githubToken = decrypt(apiKeys.githubToken);
     const platform = new GitHubPlatform(githubToken, owner, repo);
+    const prNum = parseInt(prNumber, 10);
 
-    const [latestAnalysis, currentHeadSha] = await Promise.all([
-      getLatestAnalysis(userId, `${owner}/${repo}`, parseInt(prNumber, 10)),
-      platform.getPRHeadSha(parseInt(prNumber, 10)),
-    ]);
+    // Fetch latest analysis and current HEAD SHA in parallel
+    // getPRHeadSha may fail (rate limit, network etc.) - handle gracefully
+    let latestAnalysis: Awaited<ReturnType<typeof getLatestAnalysis>> = null;
+    let currentHeadSha = "";
+
+    try {
+      [latestAnalysis, currentHeadSha] = await Promise.all([
+        getLatestAnalysis(userId, `${owner}/${repo}`, prNum),
+        platform.getPRHeadSha(prNum),
+      ]);
+    } catch (innerError) {
+      console.error("Status: GitHub/Firebase hatasi:", innerError);
+      // Try just the analysis history without SHA comparison
+      try {
+        latestAnalysis = await getLatestAnalysis(userId, `${owner}/${repo}`, prNum);
+      } catch {
+        // No history available either
+      }
+    }
 
     if (!latestAnalysis) {
       return NextResponse.json({
@@ -43,7 +59,8 @@ export async function GET(request: Request) {
       });
     }
 
-    const needsReanalysis = latestAnalysis.commitSha !== currentHeadSha;
+    // If we couldn't get currentHeadSha, assume reanalysis is needed
+    const needsReanalysis = !currentHeadSha || latestAnalysis.commitSha !== currentHeadSha;
 
     return NextResponse.json({
       hasHistory: true,

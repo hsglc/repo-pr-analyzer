@@ -102,7 +102,7 @@ export default function AnalysisPage() {
     async function checkStatus() {
       try {
         const res = await fetch(
-          `/api/analyze/status?owner=${params.owner}&repo=${params.repo}&prNumber=${prNumber}`
+          `/api/analyze/status?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}&prNumber=${prNumber}`
         );
 
         if (!res.ok) {
@@ -144,7 +144,7 @@ export default function AnalysisPage() {
     setHistoryLoading(true);
     try {
       const res = await fetch(
-        `/api/analyze/history?owner=${params.owner}&repo=${params.repo}&prNumber=${prNumber}`
+        `/api/analyze/history?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}&prNumber=${prNumber}`
       );
       if (res.ok) {
         const data = await res.json();
@@ -161,7 +161,7 @@ export default function AnalysisPage() {
     setHistoryReport(null);
     try {
       const res = await fetch(
-        `/api/analyze/history?owner=${params.owner}&repo=${params.repo}&prNumber=${prNumber}&id=${id}`
+        `/api/analyze/history?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}&prNumber=${prNumber}&id=${encodeURIComponent(id)}`
       );
       if (res.ok) {
         const data = await res.json();
