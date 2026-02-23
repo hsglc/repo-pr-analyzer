@@ -23,6 +23,10 @@
   --color-danger-light: #fef2f2;
   --color-warning: #d97706;
   --color-warning-light: #fffbeb;
+
+  --gradient-primary: linear-gradient(135deg, #2563eb, #7c3aed);
+  --gradient-success: linear-gradient(135deg, #16a34a, #059669);
+  --gradient-danger: linear-gradient(135deg, #dc2626, #db2777);
 }
 
 .dark {
@@ -43,11 +47,17 @@
   --color-danger-light: #450a0a;
   --color-warning: #f59e0b;
   --color-warning-light: #422006;
+
+  --gradient-primary: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  --gradient-success: linear-gradient(135deg, #22c55e, #10b981);
+  --gradient-danger: linear-gradient(135deg, #ef4444, #ec4899);
 }
 
 body {
   font-family: var(--font-sans);
 }
+
+/* ─── Keyframes ─── */
 
 @keyframes fade-in {
   from { opacity: 0; }
@@ -59,6 +69,45 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-critical {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ─── Animation Utilities ─── */
+
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
 }
@@ -66,6 +115,120 @@ body {
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
 }
+
+.animate-shimmer {
+  background: linear-gradient(90deg, var(--color-bg-tertiary) 25%, var(--color-border) 50%, var(--color-bg-tertiary) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-pulse-critical {
+  animation: pulse-critical 2s ease-in-out infinite;
+}
+
+/* ─── Glass Effect ─── */
+
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.dark .glass {
+  background: rgba(17, 24, 39, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ─── Gradient Border ─── */
+
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from 0deg, #2563eb, #7c3aed, #ec4899, #f59e0b, #2563eb);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.gradient-border:hover::before {
+  opacity: 1;
+}
+
+/* ─── Button Glow ─── */
+
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.btn-glow:hover::after {
+  opacity: 1;
+}
+
+.btn-glow:hover {
+  animation: pulse-ring 1.5s ease-out;
+}
+
+/* ─── Card Hover ─── */
+
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 10px -5px rgba(0, 0, 0, 0.05);
+}
+
+.dark .card-hover:hover {
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.3), 0 4px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+/* ─── Auth Background Orbs ─── */
+
+.auth-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.3;
+  animation: float 6s ease-in-out infinite;
+}
+
+/* ─── Accessibility ─── */
 
 .sr-only {
   position: absolute;
