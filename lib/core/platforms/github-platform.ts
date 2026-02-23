@@ -1,0 +1,64 @@
+import { Octokit } from "@octokit/rest";
+
+export class GitHubPlatform {
+  private octokit: Octokit;
+
+  constructor(
+    token: string,
+    private owner: string,
+    private repo: string
+  ) {
+    this.octokit = new Octokit({ auth: token });
+  }
+
+  async getDiff(prNumber: number): Promise<string> {
+    const { data } = await this.octokit.pulls.get({
+      owner: this.owner,
+      repo: this.repo,
+      pull_number: prNumber,
+      mediaType: { format: "diff" },
+    });
+
+    return data as unknown as string;
+  }
+
+  async getPRTitle(prNumber: number): Promise<string> {
+    const { data } = await this.octokit.pulls.get({
+      owner: this.owner,
+      repo: this.repo,
+      pull_number: prNumber,
+    });
+
+    return data.title;
+  }
+
+  async upsertComment(
+    prNumber: number,
+    body: string,
+    marker: string
+  ): Promise<void> {
+    const { data: comments } = await this.octokit.issues.listComments({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: prNumber,
+    });
+
+    const existing = comments.find((c) => c.body?.includes(marker));
+
+    if (existing) {
+      await this.octokit.issues.updateComment({
+        owner: this.owner,
+        repo: this.repo,
+        comment_id: existing.id,
+        body,
+      });
+    } else {
+      await this.octokit.issues.createComment({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: prNumber,
+        body,
+      });
+    }
+  }
+}
