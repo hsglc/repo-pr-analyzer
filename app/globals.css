@@ -21,6 +21,8 @@
   --color-success-light: #f0fdf4;
   --color-danger: #dc2626;
   --color-danger-light: #fef2f2;
+  --color-warning: #d97706;
+  --color-warning-light: #fffbeb;
 }
 
 .dark {
@@ -39,6 +41,8 @@
   --color-success-light: #14532d;
   --color-danger: #ef4444;
   --color-danger-light: #450a0a;
+  --color-warning: #f59e0b;
+  --color-warning-light: #422006;
 }
 
 body {

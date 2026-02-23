@@ -74,7 +74,7 @@ export default function SettingsPage() {
               </span>
             </div>
             <div className="text-[var(--color-text-muted)]">
-              AI Provider: {status.aiProvider}
+              AI Saglayici: {status.aiProvider}
             </div>
           </div>
         </div>

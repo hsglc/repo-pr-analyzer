@@ -1,0 +1,64 @@
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { findApiKeysByUserId, getLatestAnalysis } from "@/lib/db";
+import { decrypt } from "@/lib/encryption";
+import { GitHubPlatform } from "@/lib/core/platforms/github-platform";
+
+export async function GET(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const userId = (session.user as { id: string }).id;
+  const { searchParams } = new URL(request.url);
+  const owner = searchParams.get("owner");
+  const repo = searchParams.get("repo");
+  const prNumber = searchParams.get("prNumber");
+
+  if (!owner || !repo || !prNumber) {
+    return NextResponse.json({ error: "owner, repo ve prNumber gerekli" }, { status: 400 });
+  }
+
+  try {
+    const apiKeys = await findApiKeysByUserId(userId);
+    if (!apiKeys?.githubToken) {
+      return NextResponse.json({ error: "GitHub token bulunamadi" }, { status: 400 });
+    }
+
+    const githubToken = decrypt(apiKeys.githubToken);
+    const platform = new GitHubPlatform(githubToken, owner, repo);
+
+    const [latestAnalysis, currentHeadSha] = await Promise.all([
+      getLatestAnalysis(userId, `${owner}/${repo}`, parseInt(prNumber, 10)),
+      platform.getPRHeadSha(parseInt(prNumber, 10)),
+    ]);
+
+    if (!latestAnalysis) {
+      return NextResponse.json({
+        hasHistory: false,
+        needsReanalysis: false,
+        currentHeadSha,
+      });
+    }
+
+    const needsReanalysis = latestAnalysis.commitSha !== currentHeadSha;
+
+    return NextResponse.json({
+      hasHistory: true,
+      needsReanalysis,
+      currentHeadSha,
+      lastAnalysis: {
+        id: latestAnalysis.id,
+        commitSha: latestAnalysis.commitSha,
+        createdAt: latestAnalysis.createdAt,
+        prTitle: latestAnalysis.prTitle,
+        report: JSON.parse(latestAnalysis.report),
+      },
+    });
+  } catch (error) {
+    console.error("Status check error:", error);
+    return NextResponse.json({ error: "Durum kontrolu basarisiz" }, { status: 500 });
+  }
+}

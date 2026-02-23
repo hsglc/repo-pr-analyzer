@@ -14,6 +14,7 @@ export default function ConfigPage() {
   const [source, setSource] = useState<string>("default");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [detecting, setDetecting] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -62,6 +63,28 @@ export default function ConfigPage() {
     setSaving(false);
   }
 
+  async function handleAutoDetect() {
+    setDetecting(true);
+    try {
+      const res = await fetch(
+        `/api/configs/${params.owner}/${params.repo}`,
+        { method: "POST" }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setConfig(data.config);
+        setSource("auto-detected");
+        toast.success("Config otomatik olarak tespit edildi");
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Otomatik tespit basarisiz");
+      }
+    } catch {
+      toast.error("Otomatik tespit sirasinda hata olustu");
+    }
+    setDetecting(false);
+  }
+
   if (loading) {
     return <ConfigSkeleton />;
   }
@@ -70,6 +93,7 @@ export default function ConfigPage() {
     repo: "Repo (impact-map.config.json)",
     database: "Veritabani",
     default: "Varsayilan",
+    "auto-detected": "Otomatik Tespit",
   };
 
   return (
@@ -79,11 +103,20 @@ export default function ConfigPage() {
           href="/dashboard"
           className="text-sm text-[var(--color-accent)] hover:underline"
         >
-          &larr; Dashboard
+          &larr; Panel
         </Link>
-        <h2 className="mt-2 text-2xl font-bold text-[var(--color-text-primary)]">
-          {params.owner}/{params.repo} - Impact Map Config
-        </h2>
+        <div className="mt-2 flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">
+            {params.owner}/{params.repo} - Etki Haritasi Yapilandirmasi
+          </h2>
+          <button
+            onClick={handleAutoDetect}
+            disabled={detecting}
+            className="rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-sm text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50 active:scale-95 transition-all"
+          >
+            {detecting ? "Tespit ediliyor..." : "Otomatik Tespit Et"}
+          </button>
+        </div>
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">
           Kaynak: {sourceLabels[source] || source}
         </p>

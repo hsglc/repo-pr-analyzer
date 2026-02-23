@@ -5,6 +5,8 @@ import { authOptions } from "@/lib/auth";
 import { findApiKeysByUserId, upsertRepoConfig } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { resolveConfig } from "@/lib/config-resolver";
+import { GitHubPlatform } from "@/lib/core/platforms/github-platform";
+import { detectConfigFromTree } from "@/lib/auto-detect-config";
 
 const FeatureMappingSchema = z.object({
   description: z.string(),
@@ -74,5 +76,38 @@ export async function PUT(
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Config kaydedilemedi" }, { status: 500 });
+  }
+}
+
+export async function POST(
+  _request: Request,
+  { params }: { params: Promise<{ owner: string; repo: string }> }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const { owner, repo } = await params;
+    const userId = (session.user as { id: string }).id;
+    const apiKeys = await findApiKeysByUserId(userId);
+
+    if (!apiKeys?.githubToken) {
+      return NextResponse.json({ error: "GitHub token bulunamadi" }, { status: 400 });
+    }
+
+    const githubToken = decrypt(apiKeys.githubToken);
+    const platform = new GitHubPlatform(githubToken, owner, repo);
+    const tree = await platform.getRepoTree();
+    const config = detectConfigFromTree(tree);
+
+    const repoFullName = `${owner}/${repo}`;
+    await upsertRepoConfig(userId, repoFullName, JSON.stringify(config));
+
+    return NextResponse.json({ config, source: "auto-detected" });
+  } catch (error) {
+    console.error("Auto-detect config error:", error);
+    return NextResponse.json({ error: "Otomatik tespit basarisiz" }, { status: 500 });
   }
 }

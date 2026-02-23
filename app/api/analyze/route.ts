@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
-import { findApiKeysByUserId } from "@/lib/db";
+import { findApiKeysByUserId, saveAnalysis } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { runAnalysis } from "@/lib/analysis-service";
 
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       aiApiKey = decrypt(apiKeys.claudeApiKey);
     }
 
-    const report = await runAnalysis({
+    const { report, configSource, headSha } = await runAnalysis({
       owner,
       repo,
       prNumber,
@@ -53,7 +53,16 @@ export async function POST(request: Request) {
       userId,
     });
 
-    return NextResponse.json(report);
+    // Save to Firebase
+    await saveAnalysis(userId, `${owner}/${repo}`, prNumber, {
+      report: JSON.stringify(report),
+      commitSha: headSha,
+      prTitle: report.prTitle,
+      createdAt: new Date().toISOString(),
+      configSource,
+    });
+
+    return NextResponse.json({ ...report, commitSha: headSha });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });

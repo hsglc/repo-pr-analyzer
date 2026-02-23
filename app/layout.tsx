@@ -4,7 +4,7 @@ import { SessionProvider } from "@/components/session-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PR Impact Analyzer",
+  title: "PR Etki Analizci",
   description: "PR degisikliklerini analiz et, AI ile test senaryolari olustur",
 };
 

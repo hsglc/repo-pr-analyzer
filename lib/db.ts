@@ -85,6 +85,52 @@ export async function upsertApiKeys(
   }
 }
 
+// ─── Analysis ─────────────────────────────────────────
+
+export interface DbAnalysis {
+  report: string;       // JSON.stringify(AnalysisReport)
+  commitSha: string;
+  prTitle: string;
+  createdAt: string;
+  configSource: string;
+}
+
+export async function saveAnalysis(
+  userId: string,
+  repoFullName: string,
+  prNumber: number,
+  data: DbAnalysis
+): Promise<string> {
+  const key = repoToKey(repoFullName);
+  return dbPush(`analyses/${userId}/${key}/${prNumber}`, data);
+}
+
+export async function getAnalysisHistory(
+  userId: string,
+  repoFullName: string,
+  prNumber: number
+): Promise<(DbAnalysis & { id: string })[] | null> {
+  const key = repoToKey(repoFullName);
+  const data = await dbGet<Record<string, DbAnalysis>>(
+    `analyses/${userId}/${key}/${prNumber}`
+  );
+  if (!data) return null;
+
+  return Object.entries(data)
+    .map(([id, analysis]) => ({ id, ...analysis }))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function getLatestAnalysis(
+  userId: string,
+  repoFullName: string,
+  prNumber: number
+): Promise<(DbAnalysis & { id: string }) | null> {
+  const history = await getAnalysisHistory(userId, repoFullName, prNumber);
+  if (!history || history.length === 0) return null;
+  return history[0];
+}
+
 // ─── RepoConfig ────────────────────────────────────────
 
 export async function findRepoConfig(userId: string, repoFullName: string): Promise<DbRepoConfig | null> {

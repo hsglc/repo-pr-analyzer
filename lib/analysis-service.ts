@@ -5,7 +5,7 @@ import { ClaudeProvider } from "@/lib/core/providers/claude-provider";
 import { OpenAIProvider } from "@/lib/core/providers/openai-provider";
 import { GitHubPlatform } from "@/lib/core/platforms/github-platform";
 import type { AIProvider } from "@/lib/core/providers/ai-provider";
-import type { AnalysisReport, ImpactMapConfig } from "@/lib/core/types";
+import type { AnalysisReport } from "@/lib/core/types";
 import { resolveConfig } from "@/lib/config-resolver";
 
 export interface AnalysisParams {
@@ -18,16 +18,25 @@ export interface AnalysisParams {
   userId: string;
 }
 
-export async function runAnalysis(params: AnalysisParams): Promise<AnalysisReport> {
+export interface AnalysisResult {
+  report: AnalysisReport;
+  configSource: string;
+  headSha: string;
+}
+
+export async function runAnalysis(params: AnalysisParams): Promise<AnalysisResult> {
   const { owner, repo, prNumber, githubToken, aiProvider, aiApiKey, userId } = params;
 
   // 1. Resolve config
-  const { config: impactMapConfig } = await resolveConfig(owner, repo, githubToken, userId);
+  const { config: impactMapConfig, source: configSource } = await resolveConfig(owner, repo, githubToken, userId);
 
-  // 2. Get diff
+  // 2. Get diff + PR info
   const platform = new GitHubPlatform(githubToken, owner, repo);
-  const rawDiff = await platform.getDiff(prNumber);
-  const prTitle = await platform.getPRTitle(prNumber);
+  const [rawDiff, prTitle, headSha] = await Promise.all([
+    platform.getDiff(prNumber),
+    platform.getPRTitle(prNumber),
+    platform.getPRHeadSha(prNumber),
+  ]);
 
   // 3. Parse diff
   const parser = new DiffParser();
@@ -57,7 +66,7 @@ export async function runAnalysis(params: AnalysisParams): Promise<AnalysisRepor
     },
   };
 
-  return report;
+  return { report, configSource, headSha };
 }
 
 function createAIProvider(provider: string, apiKey: string): AIProvider {

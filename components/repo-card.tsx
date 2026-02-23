@@ -47,7 +47,7 @@ export function RepoCard({ repo }: { repo: Repo }) {
         <h3 className="font-semibold text-[var(--color-accent)]">{repo.name}</h3>
         {repo.isPrivate && (
           <span className="rounded-full bg-[var(--color-bg-tertiary)] px-2 py-0.5 text-xs text-[var(--color-text-secondary)]">
-            Private
+            Gizli
           </span>
         )}
       </div>

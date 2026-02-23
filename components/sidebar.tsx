@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSidebar } from "./sidebar-context";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard", label: "Panel" },
   { href: "/settings", label: "Ayarlar" },
 ];
 

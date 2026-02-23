@@ -182,7 +182,7 @@ export function ConfigEditor({
   return (
     <div className="rounded-lg bg-[var(--color-bg-primary)] p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-semibold text-[var(--color-text-primary)]">Config Editor</h3>
+        <h3 className="font-semibold text-[var(--color-text-primary)]">Yapilandirma Editoru</h3>
         <button
           onClick={handleModeToggle}
           className="rounded border border-[var(--color-border)] px-3 py-1 text-sm hover:bg-[var(--color-bg-tertiary)] transition-colors"
@@ -257,7 +257,7 @@ export function ConfigEditor({
                   className="mt-1 w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-primary)] px-2 py-1 text-sm text-[var(--color-text-primary)]"
                 />
                 <div className="mt-2">
-                  <span className="text-xs text-[var(--color-text-muted)]">Paths:</span>
+                  <span className="text-xs text-[var(--color-text-muted)]">Dosya Yollari:</span>
                   {mapping.paths.map((p, i) => (
                     <div key={i} className="flex items-center gap-1 text-sm">
                       <code className="flex-1 rounded bg-[var(--color-bg-tertiary)] px-1 text-[var(--color-text-primary)]">{p}</code>
@@ -351,7 +351,7 @@ export function ConfigEditor({
           {/* Ignore Patterns */}
           <section>
             <div className="mb-2 flex items-center justify-between">
-              <h4 className="font-medium text-[var(--color-text-primary)]">Ignore Patterns</h4>
+              <h4 className="font-medium text-[var(--color-text-primary)]">Yok Sayilacak Desenler</h4>
               {inlineInput?.type === "pattern" ? null : (
                 <button
                   onClick={() => { setInlineInput({ type: "pattern" }); setInputValue(""); }}

@@ -22,7 +22,7 @@ export function NavHeader() {
             <line x1="3" y1="18" x2="21" y2="18"/>
           </svg>
         </button>
-        <h1 className="text-lg font-semibold">PR Impact Analyzer</h1>
+        <h1 className="text-lg font-semibold">PR Etki Analizci</h1>
       </div>
       <div className="flex items-center gap-3">
         <DarkModeToggle />

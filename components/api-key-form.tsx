@@ -71,7 +71,7 @@ export function ApiKeyForm({
         </div>
 
         <div>
-          <label htmlFor="ai-provider" className="mb-1 block text-sm font-medium text-[var(--color-text-primary)]">AI Provider</label>
+          <label htmlFor="ai-provider" className="mb-1 block text-sm font-medium text-[var(--color-text-primary)]">AI Saglayici</label>
           <select
             id="ai-provider"
             value={aiProvider}

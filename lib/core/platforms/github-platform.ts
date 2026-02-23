@@ -32,6 +32,34 @@ export class GitHubPlatform {
     return data.title;
   }
 
+  async getRepoTree(): Promise<string[]> {
+    const { data: repoData } = await this.octokit.repos.get({
+      owner: this.owner,
+      repo: this.repo,
+    });
+    const defaultBranch = repoData.default_branch;
+
+    const { data } = await this.octokit.git.getTree({
+      owner: this.owner,
+      repo: this.repo,
+      tree_sha: defaultBranch,
+      recursive: "1",
+    });
+
+    return data.tree
+      .filter((item) => item.type === "blob" && item.path)
+      .map((item) => item.path!);
+  }
+
+  async getPRHeadSha(prNumber: number): Promise<string> {
+    const { data } = await this.octokit.pulls.get({
+      owner: this.owner,
+      repo: this.repo,
+      pull_number: prNumber,
+    });
+    return data.head.sha;
+  }
+
   async upsertComment(
     prNumber: number,
     body: string,
