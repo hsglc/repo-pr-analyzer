@@ -2,7 +2,15 @@ import { ImpactSummary } from "./impact-summary";
 import { TestScenariosTable } from "./test-scenarios-table";
 import type { AnalysisReport } from "@/lib/core/types";
 
-export function AnalysisResult({ report }: { report: AnalysisReport }) {
+export function AnalysisResult({
+  report,
+  checkedIds,
+  onToggleCheck,
+}: {
+  report: AnalysisReport;
+  checkedIds?: Record<string, boolean>;
+  onToggleCheck?: (scenarioId: string) => void;
+}) {
   return (
     <div className="space-y-6 animate-slide-up">
       <div className="rounded-lg bg-[var(--color-bg-primary)] p-4 shadow-sm">
@@ -17,7 +25,11 @@ export function AnalysisResult({ report }: { report: AnalysisReport }) {
 
       <ImpactSummary report={report} />
 
-      <TestScenariosTable scenarios={report.testScenarios} />
+      <TestScenariosTable
+        scenarios={report.testScenarios}
+        checkedIds={checkedIds}
+        onToggleCheck={onToggleCheck}
+      />
     </div>
   );
 }

@@ -131,6 +131,80 @@ export async function getLatestAnalysis(
   return history[0];
 }
 
+// ─── Repo Analysis Summary ────────────────────────────
+
+export interface RepoAnalysisSummary {
+  riskLevel: string;
+  createdAt: string;
+  commitSha: string;
+}
+
+export async function getRepoAnalysisSummary(
+  userId: string,
+  repoFullName: string
+): Promise<Record<number, RepoAnalysisSummary>> {
+  const key = repoToKey(repoFullName);
+  const data = await dbGet<Record<string, Record<string, DbAnalysis>>>(
+    `analyses/${userId}/${key}`
+  );
+  if (!data) return {};
+
+  const summaries: Record<number, RepoAnalysisSummary> = {};
+
+  for (const [prNum, analyses] of Object.entries(data)) {
+    const prNumber = parseInt(prNum, 10);
+    if (isNaN(prNumber)) continue;
+
+    // Find the latest analysis for this PR
+    let latest: DbAnalysis | null = null;
+    for (const analysis of Object.values(analyses)) {
+      if (!latest || new Date(analysis.createdAt) > new Date(latest.createdAt)) {
+        latest = analysis;
+      }
+    }
+
+    if (latest) {
+      let riskLevel = "low";
+      try {
+        const report = JSON.parse(latest.report);
+        riskLevel = report.impact?.riskLevel || "low";
+      } catch { /* ignore parse errors */ }
+
+      summaries[prNumber] = {
+        riskLevel,
+        createdAt: latest.createdAt,
+        commitSha: latest.commitSha,
+      };
+    }
+  }
+
+  return summaries;
+}
+
+// ─── Scenario Checks ─────────────────────────────────
+
+export async function saveScenarioChecks(
+  userId: string,
+  repoFullName: string,
+  prNumber: number,
+  checks: Record<string, boolean>
+): Promise<void> {
+  const key = repoToKey(repoFullName);
+  await dbSet(`scenarioChecks/${userId}/${key}/${prNumber}`, checks);
+}
+
+export async function getScenarioChecks(
+  userId: string,
+  repoFullName: string,
+  prNumber: number
+): Promise<Record<string, boolean>> {
+  const key = repoToKey(repoFullName);
+  const data = await dbGet<Record<string, boolean>>(
+    `scenarioChecks/${userId}/${key}/${prNumber}`
+  );
+  return data || {};
+}
+
 // ─── RepoConfig ────────────────────────────────────────
 
 export async function findRepoConfig(userId: string, repoFullName: string): Promise<DbRepoConfig | null> {

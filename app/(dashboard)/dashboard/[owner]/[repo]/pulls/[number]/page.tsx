@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -58,6 +58,10 @@ export default function AnalysisPage() {
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
   const [statusInfo, setStatusInfo] = useState<{ needsReanalysis: boolean; currentHeadSha: string } | null>(null);
 
+  // Checkbox state
+  const [checkedIds, setCheckedIds] = useState<Record<string, boolean>>({});
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const prNumber = parseInt(params.number, 10);
   const isValidPR = !isNaN(prNumber) && prNumber > 0;
 
@@ -92,6 +96,7 @@ export default function AnalysisPage() {
     setAnalyzing(false);
   }, [params.owner, params.repo, prNumber]);
 
+  // Load status on mount - NO auto-analysis
   useEffect(() => {
     if (!isValidPR) {
       setError("Gecersiz PR numarasi");
@@ -106,8 +111,8 @@ export default function AnalysisPage() {
         );
 
         if (!res.ok) {
-          // Fallback: run new analysis
-          await runNewAnalysis();
+          setStatusInfo({ needsReanalysis: false, currentHeadSha: "" });
+          setReport(null);
           setLoading(false);
           return;
         }
@@ -115,29 +120,77 @@ export default function AnalysisPage() {
         const status: AnalysisStatus = await res.json();
 
         if (status.hasHistory && !status.needsReanalysis && status.lastAnalysis) {
-          // Show cached analysis
           setReport(status.lastAnalysis.report);
           setCommitSha(status.lastAnalysis.commitSha);
           setStatusInfo({ needsReanalysis: false, currentHeadSha: status.currentHeadSha });
         } else if (status.hasHistory && status.needsReanalysis && status.lastAnalysis) {
-          // Show old analysis with warning
           setReport(status.lastAnalysis.report);
           setCommitSha(status.lastAnalysis.commitSha);
           setStatusInfo({ needsReanalysis: true, currentHeadSha: status.currentHeadSha });
         } else {
-          // No history, run new analysis
+          // No history - do NOT auto-analyze, just show button
           setStatusInfo({ needsReanalysis: false, currentHeadSha: status.currentHeadSha });
-          await runNewAnalysis();
+          setReport(null);
         }
       } catch {
-        // Fallback: run new analysis
-        await runNewAnalysis();
+        setStatusInfo({ needsReanalysis: false, currentHeadSha: "" });
+        setReport(null);
       }
       setLoading(false);
     }
 
     checkStatus();
-  }, [params.owner, params.repo, prNumber, isValidPR, runNewAnalysis]);
+  }, [params.owner, params.repo, prNumber, isValidPR]);
+
+  // Load checkbox state on mount
+  useEffect(() => {
+    if (!isValidPR) return;
+
+    async function loadChecks() {
+      try {
+        const res = await fetch(
+          `/api/analyze/checks?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}&prNumber=${prNumber}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setCheckedIds(data.checks || {});
+        }
+      } catch {
+        // Non-critical, ignore
+      }
+    }
+
+    loadChecks();
+  }, [params.owner, params.repo, prNumber, isValidPR]);
+
+  // Save checks to Firebase with debounce
+  const saveChecks = useCallback((newChecks: Record<string, boolean>) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        await fetch("/api/analyze/checks", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            owner: params.owner,
+            repo: params.repo,
+            prNumber,
+            checks: newChecks,
+          }),
+        });
+      } catch {
+        // Non-critical
+      }
+    }, 500);
+  }, [params.owner, params.repo, prNumber]);
+
+  function handleToggleCheck(scenarioId: string) {
+    setCheckedIds((prev) => {
+      const updated = { ...prev, [scenarioId]: !prev[scenarioId] };
+      saveChecks(updated);
+      return updated;
+    });
+  }
 
   async function loadHistory() {
     if (history.length > 0) return;
@@ -203,8 +256,12 @@ export default function AnalysisPage() {
   async function handleReanalyze() {
     setError("");
     await runNewAnalysis();
-    // Refresh history cache
     setHistory([]);
+  }
+
+  async function handleFirstAnalysis() {
+    setError("");
+    await runNewAnalysis();
   }
 
   return (
@@ -249,6 +306,28 @@ export default function AnalysisPage() {
         </div>
       )}
 
+      {/* No analysis yet - show button */}
+      {!loading && !analyzing && !report && !error && (
+        <div className="flex flex-col items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] py-16 text-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-[var(--color-text-muted)]">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <h3 className="mb-2 text-lg font-semibold text-[var(--color-text-primary)]">
+            Henuz analiz yapilmadi
+          </h3>
+          <p className="mb-6 text-sm text-[var(--color-text-muted)]">
+            Bu PR icin henuz bir analiz bulunmuyor. Analiz baslatmak icin asagidaki butona tiklayin.
+          </p>
+          <button
+            onClick={handleFirstAnalysis}
+            className="rounded-lg bg-[var(--color-accent)] px-6 py-2.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)] active:scale-95 transition-all"
+          >
+            Analiz Et
+          </button>
+        </div>
+      )}
+
       {/* Tabs */}
       {!loading && report && (
         <div className="mb-6 flex border-b border-[var(--color-border)]">
@@ -287,7 +366,11 @@ export default function AnalysisPage() {
       {/* Current Analysis Tab */}
       {activeTab === "current" && report && !loading && !analyzing && (
         <>
-          <AnalysisResult report={report} />
+          <AnalysisResult
+            report={report}
+            checkedIds={checkedIds}
+            onToggleCheck={handleToggleCheck}
+          />
 
           <div className="mt-6 flex items-center gap-4">
             <button

@@ -11,14 +11,29 @@ interface PR {
   updatedAt: string;
 }
 
+interface AnalysisSummary {
+  riskLevel: string;
+  createdAt: string;
+  commitSha: string;
+}
+
+const RISK_EMOJI: Record<string, string> = {
+  low: "🟢",
+  medium: "🟡",
+  high: "🟠",
+  critical: "🔴",
+};
+
 export function PRListItem({
   pr,
   owner,
   repo,
+  analysisSummary,
 }: {
   pr: PR;
   owner: string;
   repo: string;
+  analysisSummary?: AnalysisSummary;
 }) {
   return (
     <div className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
@@ -58,13 +73,25 @@ export function PRListItem({
             ))}
           </div>
         )}
+
+        {analysisSummary && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+            <span>{RISK_EMOJI[analysisSummary.riskLevel] || "⚪"} {analysisSummary.riskLevel}</span>
+            <span>·</span>
+            <span>Son analiz: {new Date(analysisSummary.createdAt).toLocaleDateString("tr-TR")}</span>
+            <span>·</span>
+            <code className="rounded bg-[var(--color-bg-tertiary)] px-1 py-0.5 text-[10px]">
+              {analysisSummary.commitSha.substring(0, 7)}
+            </code>
+          </div>
+        )}
       </div>
 
       <Link
         href={`/dashboard/${owner}/${repo}/pulls/${pr.number}`}
         className="ml-4 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm text-white hover:bg-[var(--color-accent-hover)] active:scale-95 transition-all"
       >
-        Analiz Et
+        {analysisSummary ? "Analizi Gor" : "Analiz Et"}
       </Link>
     </div>
   );

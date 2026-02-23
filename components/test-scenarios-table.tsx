@@ -15,8 +15,12 @@ const PRIORITY_ORDER: Record<string, number> = {
 
 export function TestScenariosTable({
   scenarios,
+  checkedIds,
+  onToggleCheck,
 }: {
   scenarios: TestScenario[];
+  checkedIds?: Record<string, boolean>;
+  onToggleCheck?: (scenarioId: string) => void;
 }) {
   const [sortBy, setSortBy] = useState<SortKey>("priority");
   const [filterType, setFilterType] = useState<string>("all");
@@ -36,12 +40,24 @@ export function TestScenariosTable({
   });
 
   const types = [...new Set(scenarios.map((s) => s.type))];
+  const checkedCount = checkedIds
+    ? scenarios.filter((s) => checkedIds[s.id]).length
+    : 0;
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-bold text-[var(--color-text-primary)]">
-          Test Senaryolari ({scenarios.length})
+          Test Senaryolari
+          {checkedIds ? (
+            <span className="ml-2 text-sm font-normal text-[var(--color-text-muted)]">
+              ({checkedCount}/{scenarios.length} tamamlandi)
+            </span>
+          ) : (
+            <span className="ml-2 text-sm font-normal text-[var(--color-text-muted)]">
+              ({scenarios.length})
+            </span>
+          )}
         </h3>
         <div className="flex items-center gap-3">
           <select
@@ -71,7 +87,12 @@ export function TestScenariosTable({
 
       <div className="space-y-2">
         {sorted.map((scenario) => (
-          <ScenarioDetail key={scenario.id} scenario={scenario} />
+          <ScenarioDetail
+            key={scenario.id}
+            scenario={scenario}
+            checked={checkedIds?.[scenario.id] ?? false}
+            onToggle={onToggleCheck ? () => onToggleCheck(scenario.id) : undefined}
+          />
         ))}
       </div>
 

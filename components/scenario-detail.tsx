@@ -4,20 +4,50 @@ import { useRef, useState } from "react";
 import { RiskBadge } from "./risk-badge";
 import type { TestScenario } from "@/lib/core/types";
 
-export function ScenarioDetail({ scenario }: { scenario: TestScenario }) {
+export function ScenarioDetail({
+  scenario,
+  checked,
+  onToggle,
+}: {
+  scenario: TestScenario;
+  checked?: boolean;
+  onToggle?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)]">
+    <div className={`rounded-lg border transition-colors ${
+      checked
+        ? "border-[var(--color-success)] bg-[var(--color-success-light)]"
+        : "border-[var(--color-border)] bg-[var(--color-bg-primary)]"
+    }`}>
       <button
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between p-4 text-left"
         aria-expanded={open}
       >
         <div className="flex items-center gap-3">
+          {onToggle && (
+            <input
+              type="checkbox"
+              checked={checked ?? false}
+              onChange={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-success)] accent-[var(--color-success)] cursor-pointer"
+            />
+          )}
           <span className="text-sm font-medium text-[var(--color-text-muted)]">{scenario.id}</span>
-          <span className="font-medium text-[var(--color-text-primary)]">{scenario.title}</span>
+          <span className={`font-medium ${
+            checked
+              ? "text-[var(--color-text-muted)] line-through"
+              : "text-[var(--color-text-primary)]"
+          }`}>
+            {scenario.title}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <RiskBadge level={scenario.priority} />

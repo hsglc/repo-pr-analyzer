@@ -15,11 +15,18 @@ interface PR {
   updatedAt: string;
 }
 
+interface AnalysisSummary {
+  riskLevel: string;
+  createdAt: string;
+  commitSha: string;
+}
+
 export default function PullsPage() {
   const params = useParams<{ owner: string; repo: string }>();
   const [pulls, setPulls] = useState<PR[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [summaries, setSummaries] = useState<Record<number, AnalysisSummary>>({});
 
   useEffect(() => {
     async function load() {
@@ -41,6 +48,26 @@ export default function PullsPage() {
     }
     load();
   }, [params.owner, params.repo]);
+
+  // Load analysis summaries after PRs are loaded
+  useEffect(() => {
+    if (pulls.length === 0) return;
+
+    async function loadSummaries() {
+      try {
+        const res = await fetch(
+          `/api/analyze/repo-summary?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setSummaries(data.summaries || {});
+        }
+      } catch {
+        // Non-critical, ignore
+      }
+    }
+    loadSummaries();
+  }, [params.owner, params.repo, pulls.length]);
 
   if (loading) {
     return (
@@ -97,6 +124,7 @@ export default function PullsPage() {
               pr={pr}
               owner={params.owner}
               repo={params.repo}
+              analysisSummary={summaries[pr.number]}
             />
           ))}
         </div>
