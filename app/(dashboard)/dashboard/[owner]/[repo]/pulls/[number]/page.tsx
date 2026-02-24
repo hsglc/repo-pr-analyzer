@@ -10,6 +10,8 @@ import { PRDetailCard } from "@/components/pr-detail-card";
 import { CommitHistory } from "@/components/commit-history";
 import { DiffViewer } from "@/components/diff-viewer";
 import type { AnalysisReport, CodeReviewItem } from "@/lib/core/types";
+import { authFetch } from "@/lib/api-client";
+import { ModelSelector } from "@/components/model-selector";
 
 interface AnalysisStatus {
   hasHistory: boolean;
@@ -71,6 +73,7 @@ export default function AnalysisPage() {
   // Checkbox state
   const [checkedIds, setCheckedIds] = useState<Record<string, boolean>>({});
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [selectedModel, setSelectedModel] = useState("");
 
   const prNumber = parseInt(params.number, 10);
   const isValidPR = !isNaN(prNumber) && prNumber > 0;
@@ -78,13 +81,14 @@ export default function AnalysisPage() {
   const runNewAnalysis = useCallback(async () => {
     setAnalyzing(true);
     try {
-      const res = await fetch("/api/analyze", {
+      const res = await authFetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           owner: params.owner,
           repo: params.repo,
           prNumber,
+          model: selectedModel || undefined,
         }),
       });
 
@@ -104,18 +108,19 @@ export default function AnalysisPage() {
       setError("Analiz sırasında beklenmeyen bir hata oluştu");
     }
     setAnalyzing(false);
-  }, [params.owner, params.repo, prNumber]);
+  }, [params.owner, params.repo, prNumber, selectedModel]);
 
   const runCodeReview = useCallback(async () => {
     setReviewing(true);
     try {
-      const res = await fetch("/api/analyze/code-review", {
+      const res = await authFetch("/api/analyze/code-review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           owner: params.owner,
           repo: params.repo,
           prNumber,
+          model: selectedModel || undefined,
         }),
       });
 
@@ -133,14 +138,14 @@ export default function AnalysisPage() {
       toast.error("Kod inceleme sırasında beklenmeyen bir hata oluştu");
     }
     setReviewing(false);
-  }, [params.owner, params.repo, prNumber]);
+  }, [params.owner, params.repo, prNumber, selectedModel]);
 
   async function handlePostReviewToGitHub() {
     if (codeReview.length === 0) return;
     setPostingReview(true);
 
     try {
-      const res = await fetch("/api/analyze/post-review", {
+      const res = await authFetch("/api/analyze/post-review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -173,7 +178,7 @@ export default function AnalysisPage() {
 
     async function checkStatus() {
       try {
-        const res = await fetch(
+        const res = await authFetch(
           `/api/analyze/status?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}&prNumber=${prNumber}`
         );
 
@@ -215,7 +220,7 @@ export default function AnalysisPage() {
 
     async function loadChecks() {
       try {
-        const res = await fetch(
+        const res = await authFetch(
           `/api/analyze/checks?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}&prNumber=${prNumber}`
         );
         if (res.ok) {
@@ -235,7 +240,7 @@ export default function AnalysisPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       try {
-        await fetch("/api/analyze/checks", {
+        await authFetch("/api/analyze/checks", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -263,7 +268,7 @@ export default function AnalysisPage() {
     if (history.length > 0) return;
     setHistoryLoading(true);
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `/api/analyze/history?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}&prNumber=${prNumber}`
       );
       if (res.ok) {
@@ -280,7 +285,7 @@ export default function AnalysisPage() {
     setSelectedHistoryId(id);
     setHistoryReport(null);
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `/api/analyze/history?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}&prNumber=${prNumber}&id=${encodeURIComponent(id)}`
       );
       if (res.ok) {
@@ -297,7 +302,7 @@ export default function AnalysisPage() {
     setPosting(true);
 
     try {
-      const res = await fetch("/api/analyze/post-to-pr", {
+      const res = await authFetch("/api/analyze/post-to-pr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -396,6 +401,13 @@ export default function AnalysisPage() {
       {/* PR Detail Card */}
       {isValidPR && (
         <PRDetailCard owner={params.owner} repo={params.repo} prNumber={prNumber} />
+      )}
+
+      {/* Model Selector */}
+      {isValidPR && !loading && (
+        <div className="mb-4">
+          <ModelSelector onModelChange={setSelectedModel} />
+        </div>
       )}
 
       {/* Status Banner */}

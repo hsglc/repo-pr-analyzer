@@ -8,6 +8,8 @@ import { PRListItem } from "@/components/pr-list-item";
 import { AnalysisResult } from "@/components/analysis-result";
 import { PRListSkeleton, AnalysisSkeleton } from "@/components/skeletons";
 import type { AnalysisReport, CodeReviewItem } from "@/lib/core/types";
+import { authFetch } from "@/lib/api-client";
+import { ModelSelector } from "@/components/model-selector";
 
 type TabType = "pulls" | "branches";
 type PRState = "open" | "closed" | "all";
@@ -62,13 +64,14 @@ export default function RepoDetailPage() {
   const [branchCodeReview, setBranchCodeReview] = useState<CodeReviewItem[]>([]);
   const [branchAnalysisError, setBranchAnalysisError] = useState("");
   const [noDiff, setNoDiff] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("");
 
   // Load PRs
   const loadPulls = useCallback(async (state: PRState) => {
     setPrLoading(true);
     setPrError("");
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `/api/repos/${params.owner}/${params.repo}/pulls?state=${state}`
       );
       if (!res.ok) {
@@ -95,7 +98,7 @@ export default function RepoDetailPage() {
     if (pulls.length === 0) return;
     async function loadSummaries() {
       try {
-        const res = await fetch(
+        const res = await authFetch(
           `/api/analyze/repo-summary?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}`
         );
         if (res.ok) {
@@ -115,7 +118,7 @@ export default function RepoDetailPage() {
     setBranchLoading(true);
     setBranchError("");
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `/api/repos/${params.owner}/${params.repo}/branches`
       );
       if (!res.ok) {
@@ -153,7 +156,7 @@ export default function RepoDetailPage() {
     setNoDiff(false);
 
     try {
-      const res = await fetch("/api/analyze/branch", {
+      const res = await authFetch("/api/analyze/branch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -161,6 +164,7 @@ export default function RepoDetailPage() {
           repo: params.repo,
           baseBranch,
           headBranch,
+          model: selectedModel || undefined,
         }),
       });
 
@@ -184,7 +188,7 @@ export default function RepoDetailPage() {
       setBranchAnalysisError("Branch analizi sırasında beklenmeyen bir hata oluştu");
     }
     setBranchAnalyzing(false);
-  }, [params.owner, params.repo, headBranch, baseBranch]);
+  }, [params.owner, params.repo, headBranch, baseBranch, selectedModel]);
 
   // Branch code review
   const handleBranchCodeReview = useCallback(async () => {
@@ -204,7 +208,7 @@ export default function RepoDetailPage() {
     setNoDiff(false);
 
     try {
-      const res = await fetch("/api/analyze/branch/code-review", {
+      const res = await authFetch("/api/analyze/branch/code-review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -212,6 +216,7 @@ export default function RepoDetailPage() {
           repo: params.repo,
           baseBranch,
           headBranch,
+          model: selectedModel || undefined,
         }),
       });
 
@@ -244,7 +249,7 @@ export default function RepoDetailPage() {
       setBranchAnalysisError("Kod inceleme sırasında beklenmeyen bir hata oluştu");
     }
     setBranchReviewing(false);
-  }, [params.owner, params.repo, headBranch, baseBranch]);
+  }, [params.owner, params.repo, headBranch, baseBranch, selectedModel]);
 
   const prStateLabels: { key: PRState; label: string }[] = [
     { key: "open", label: "Açık" },
@@ -445,6 +450,11 @@ export default function RepoDetailPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Model selector */}
+              <div className="mb-4">
+                <ModelSelector onModelChange={setSelectedModel} />
               </div>
 
               {/* Same branch warning */}

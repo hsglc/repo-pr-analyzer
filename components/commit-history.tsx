@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authFetch } from "@/lib/api-client";
 
 interface Commit {
   sha: string;
@@ -16,7 +17,7 @@ export function CommitHistory({ owner, repo, prNumber }: { owner: string; repo: 
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(
+        const res = await authFetch(
           `/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/commits`
         );
         if (res.ok) {

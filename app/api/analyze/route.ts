@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { z } from "zod";
-import { authOptions } from "@/lib/auth";
+import { verifyAuth } from "@/lib/auth-server";
 import { findApiKeysByUserId, saveAnalysis } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { runAnalysis } from "@/lib/analysis-service";
@@ -10,18 +9,19 @@ const AnalyzeSchema = z.object({
   owner: z.string().min(1),
   repo: z.string().min(1),
   prNumber: z.number().int().positive(),
+  model: z.string().optional(),
 });
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  const auth = await verifyAuth(request);
+  if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   try {
-    const userId = (session.user as { id: string }).id;
+    const userId = auth.uid;
     const body = await request.json();
-    const { owner, repo, prNumber } = AnalyzeSchema.parse(body);
+    const { owner, repo, prNumber, model } = AnalyzeSchema.parse(body);
 
     const apiKeys = await findApiKeysByUserId(userId);
     if (!apiKeys?.githubToken) {
@@ -51,6 +51,7 @@ export async function POST(request: Request) {
       aiProvider: apiKeys.aiProvider,
       aiApiKey,
       userId,
+      model,
     });
 
     // Save to Firebase (non-critical - don't let save failure break the response)

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ConfigEditor } from "@/components/config-editor";
 import { ConfigSkeleton } from "@/components/skeletons";
 import type { ImpactMapConfig } from "@/lib/core/types";
+import { authFetch } from "@/lib/api-client";
 
 export default function ConfigPage() {
   const params = useParams<{ owner: string; repo: string }>();
@@ -19,7 +20,7 @@ export default function ConfigPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(
+        const res = await authFetch(
           `/api/configs/${params.owner}/${params.repo}`
         );
         if (res.ok) {
@@ -41,7 +42,7 @@ export default function ConfigPage() {
     setSaving(true);
 
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `/api/configs/${params.owner}/${params.repo}`,
         {
           method: "PUT",
@@ -66,7 +67,7 @@ export default function ConfigPage() {
   async function handleAutoDetect() {
     setDetecting(true);
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `/api/configs/${params.owner}/${params.repo}`,
         { method: "POST" }
       );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authFetch } from "@/lib/api-client";
 
 interface DiffFile {
   path: string;
@@ -24,7 +25,7 @@ export function DiffViewer({ owner, repo, prNumber }: { owner: string; repo: str
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(
+        const res = await authFetch(
           `/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/diff`
         );
 

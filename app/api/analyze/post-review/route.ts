@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { z } from "zod";
-import { authOptions } from "@/lib/auth";
+import { verifyAuth } from "@/lib/auth-server";
 import { findApiKeysByUserId } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { GitHubPlatform } from "@/lib/core/platforms/github-platform";
@@ -32,13 +31,13 @@ const SEVERITY_EMOJI: Record<string, string> = {
 };
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  const auth = await verifyAuth(request);
+  if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   try {
-    const userId = (session.user as { id: string }).id;
+    const userId = auth.uid;
     const body = await request.json();
     const { owner, repo, prNumber, codeReview } = PostReviewSchema.parse(body);
 

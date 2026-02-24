@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./sidebar-context";
 import { DarkModeToggle } from "./dark-mode-toggle";
-import { useSession } from "next-auth/react";
+import { useAuth } from "./auth-provider";
 
 const navItems = [
   {
@@ -34,7 +34,7 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { open, close } = useSidebar();
-  const { data: session } = useSession();
+  const { user } = useAuth();
 
   return (
     <>
@@ -98,13 +98,13 @@ export function Sidebar() {
             <span className="text-xs text-[var(--color-text-muted)]">Tema</span>
             <DarkModeToggle />
           </div>
-          {session?.user && (
+          {user && (
             <div className="flex items-center gap-2 rounded-lg bg-[var(--color-bg-tertiary)] px-3 py-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-accent)] text-xs font-medium text-white">
-                {session.user.email?.charAt(0).toUpperCase() || "U"}
+                {user.email?.charAt(0).toUpperCase() || "U"}
               </div>
               <span className="truncate text-xs text-[var(--color-text-secondary)]">
-                {session.user.email}
+                {user.email}
               </span>
             </div>
           )}

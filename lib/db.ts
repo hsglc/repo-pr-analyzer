@@ -1,14 +1,6 @@
-import { dbGet, dbSet, dbUpdate, dbPush, emailToKey, repoToKey } from "./firebase";
+import { dbGet, dbSet, dbUpdate, dbPush, repoToKey } from "./firebase";
 
 // ─── Types ─────────────────────────────────────────────
-
-export interface DbUser {
-  id: string;
-  email: string;
-  passwordHash: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export interface DbApiKeys {
   userId: string;
@@ -26,33 +18,6 @@ export interface DbRepoConfig {
   impactMapConfig: string;
   createdAt: string;
   updatedAt: string;
-}
-
-// ─── User ──────────────────────────────────────────────
-
-export async function findUserByEmail(email: string): Promise<(DbUser & { apiKeys?: DbApiKeys | null }) | null> {
-  const emailKey = emailToKey(email);
-  const mapping = await dbGet<{ userId: string }>(`emailIndex/${emailKey}`);
-  if (!mapping) return null;
-
-  const user = await dbGet<Omit<DbUser, "id">>(`users/${mapping.userId}`);
-  if (!user) return null;
-
-  const apiKeys = await dbGet<DbApiKeys>(`apiKeys/${mapping.userId}`);
-
-  return { id: mapping.userId, ...user, apiKeys };
-}
-
-export async function createUser(email: string, passwordHash: string): Promise<DbUser> {
-  const now = new Date().toISOString();
-  const userData = { email, passwordHash, createdAt: now, updatedAt: now };
-
-  const id = await dbPush("users", userData);
-
-  // Email index for lookup
-  await dbSet(`emailIndex/${emailToKey(email)}`, { userId: id });
-
-  return { id, ...userData };
 }
 
 // ─── ApiKeys ───────────────────────────────────────────

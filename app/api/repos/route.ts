@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { Octokit } from "@octokit/rest";
-import { authOptions } from "@/lib/auth";
+import { verifyAuth } from "@/lib/auth-server";
 import { findApiKeysByUserId } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+export async function GET(request: Request) {
+  const auth = await verifyAuth(request);
+  if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
-  const userId = (session.user as { id: string }).id;
+  const userId = auth.uid;
   const apiKeys = await findApiKeysByUserId(userId);
 
   if (!apiKeys?.githubToken) {

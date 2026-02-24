@@ -1,6 +1,7 @@
 "use client";
 
-import { signOut } from "next-auth/react";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase-client";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useSidebar } from "./sidebar-context";
@@ -52,7 +53,7 @@ export function NavHeader() {
 
       <div className="flex items-center gap-3">
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => signOut(auth).then(() => window.location.href = "/login")}
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -35,14 +35,16 @@ const CodeReviewResponseSchema = z.object({
 
 export class OpenAIProvider implements AIProvider {
   private client: OpenAI;
+  private model: string;
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, model: string = "gpt-4o") {
     this.client = new OpenAI({ apiKey });
+    this.model = model;
   }
 
   private async callOpenAI(systemPrompt: string, userPrompt: string): Promise<string> {
     const response = await this.client.chat.completions.create({
-      model: "gpt-4o",
+      model: this.model,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: systemPrompt },

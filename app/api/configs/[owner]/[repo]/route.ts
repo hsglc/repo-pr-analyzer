@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { z } from "zod";
-import { authOptions } from "@/lib/auth";
+import { verifyAuth } from "@/lib/auth-server";
 import { findApiKeysByUserId, upsertRepoConfig } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { resolveConfig } from "@/lib/config-resolver";
@@ -22,16 +21,16 @@ const ImpactMapConfigSchema = z.object({
 });
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ owner: string; repo: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  const auth = await verifyAuth(request);
+  if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   const { owner, repo } = await params;
-  const userId = (session.user as { id: string }).id;
+  const userId = auth.uid;
   const apiKeys = await findApiKeysByUserId(userId);
 
   if (!apiKeys?.githubToken) {
@@ -52,14 +51,14 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ owner: string; repo: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  const auth = await verifyAuth(request);
+  if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   try {
     const { owner, repo } = await params;
-    const userId = (session.user as { id: string }).id;
+    const userId = auth.uid;
     const body = await request.json();
 
     const parsed = ImpactMapConfigSchema.safeParse(body.config);
@@ -80,17 +79,17 @@ export async function PUT(
 }
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ owner: string; repo: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  const auth = await verifyAuth(request);
+  if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   try {
     const { owner, repo } = await params;
-    const userId = (session.user as { id: string }).id;
+    const userId = auth.uid;
     const apiKeys = await findApiKeysByUserId(userId);
 
     if (!apiKeys?.githubToken) {

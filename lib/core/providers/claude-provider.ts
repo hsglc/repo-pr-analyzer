@@ -35,9 +35,11 @@ const CodeReviewResponseSchema = z.object({
 
 export class ClaudeProvider implements AIProvider {
   private client: Anthropic;
+  private model: string;
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, model: string = "claude-sonnet-4-6") {
     this.client = new Anthropic({ apiKey });
+    this.model = model;
   }
 
   private extractJSON(text: string): string {
@@ -61,7 +63,7 @@ export class ClaudeProvider implements AIProvider {
 
   private async callClaude(prompt: string): Promise<string> {
     const response = await this.client.messages.create({
-      model: "claude-sonnet-4-6",
+      model: this.model,
       max_tokens: 4096,
       messages: [{ role: "user", content: prompt }],
     });

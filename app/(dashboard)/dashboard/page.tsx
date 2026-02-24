@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { RepoCard } from "@/components/repo-card";
 import { RepoCardSkeletonGrid } from "@/components/skeletons";
+import { authFetch } from "@/lib/api-client";
 
 interface Repo {
   id: number;
@@ -34,7 +35,7 @@ export default function DashboardPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/repos");
+        const res = await authFetch("/api/repos");
         if (res.status === 400) {
           router.push("/settings");
           return;

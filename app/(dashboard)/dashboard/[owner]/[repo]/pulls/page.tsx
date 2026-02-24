@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { PRListItem } from "@/components/pr-list-item";
 import { PRListSkeleton } from "@/components/skeletons";
 import Link from "next/link";
+import { authFetch } from "@/lib/api-client";
 
 interface PR {
   number: number;
@@ -33,7 +34,7 @@ export default function PullsPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(
+        const res = await authFetch(
           `/api/repos/${params.owner}/${params.repo}/pulls`
         );
         if (!res.ok) {
@@ -57,7 +58,7 @@ export default function PullsPage() {
 
     async function loadSummaries() {
       try {
-        const res = await fetch(
+        const res = await authFetch(
           `/api/analyze/repo-summary?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}`
         );
         if (res.ok) {
