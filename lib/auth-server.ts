@@ -1,4 +1,4 @@
-const FIREBASE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY!;
+const FIREBASE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_CONFIG_ID!;
 
 export async function verifyAuth(
   request: Request
