@@ -3,7 +3,7 @@ import { z } from "zod";
 import { verifyAuth } from "@/lib/auth-server";
 import { findApiKeysByUserId, saveAnalysis } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
-import { runAnalysis } from "@/lib/analysis-service";
+import { runAnalysis, AnalysisError } from "@/lib/analysis-service";
 
 const AnalyzeSchema = z.object({
   owner: z.string().min(1),
@@ -71,6 +71,10 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
+    }
+    if (error instanceof AnalysisError) {
+      console.error(`Analyze error [${error.step}]:`, error.cause || error.message);
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
     console.error("Analyze error:", error);
     return NextResponse.json({ error: "Analiz sırasında hata oluştu" }, { status: 500 });

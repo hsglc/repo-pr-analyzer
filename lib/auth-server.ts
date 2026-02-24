@@ -1,3 +1,5 @@
+import { setAuthToken } from "./request-context";
+
 const FIREBASE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_CONFIG_ID!;
 
 export async function verifyAuth(
@@ -23,6 +25,9 @@ export async function verifyAuth(
     const data = await res.json();
     const user = data.users?.[0];
     if (!user) return null;
+
+    // Store token for RTDB requests
+    setAuthToken(idToken);
 
     return { uid: user.localId, email: user.email || "" };
   } catch (error) {

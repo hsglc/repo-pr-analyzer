@@ -51,6 +51,8 @@ export async function PUT(request: Request) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
     }
-    return NextResponse.json({ error: "Ayarlar kaydedilemedi" }, { status: 500 });
+    console.error("Settings PUT error:", error);
+    const message = error instanceof Error ? error.message : "Ayarlar kaydedilemedi";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

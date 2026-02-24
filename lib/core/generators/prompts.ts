@@ -71,6 +71,69 @@ Yanıtı aşağıdaki JSON formatında ver:
 \`\`\``;
 }
 
+function detectLanguage(diffContent: string): string {
+  const extCounts: Record<string, number> = {};
+  const fileMatches = diffContent.matchAll(/^(?:diff --git a\/.*?\.|[+-]{3} [ab]\/.*?\.)(\w+)/gm);
+  for (const m of fileMatches) {
+    const ext = m[1].toLowerCase();
+    extCounts[ext] = (extCounts[ext] || 0) + 1;
+  }
+
+  const extToLang: Record<string, string> = {
+    ts: "TypeScript", tsx: "TypeScript/React", js: "JavaScript", jsx: "JavaScript/React",
+    py: "Python", go: "Go", rs: "Rust", java: "Java", kt: "Kotlin",
+    cs: "C#", rb: "Ruby", php: "PHP", swift: "Swift", dart: "Dart",
+  };
+
+  let topExt = "";
+  let topCount = 0;
+  for (const [ext, count] of Object.entries(extCounts)) {
+    if (count > topCount && extToLang[ext]) {
+      topExt = ext;
+      topCount = count;
+    }
+  }
+
+  return extToLang[topExt] || "General";
+}
+
+function getLanguageBestPractices(lang: string): string {
+  const practices: Record<string, string> = {
+    "TypeScript": `- \`any\` tipi kullanımından kaçınılmalı, doğru tipler tanımlanmalı
+- Null/undefined kontrolleri yapılmalı (strict null checks)
+- Enum yerine union type tercih edilmeli (tree-shaking uyumluluğu)
+- Interface ve type alias doğru kullanılmalı`,
+    "TypeScript/React": `- \`any\` tipi kullanımından kaçınılmalı, doğru tipler tanımlanmalı
+- React hook kuralları: hook'lar koşullu çağrılmamalı, bağımlılık dizileri eksiksiz olmalı
+- Gereksiz re-render: useMemo/useCallback eksikliği, büyük objelerin inline tanımlanması
+- useEffect bağımlılık dizisi doğruluğu ve cleanup fonksiyonu
+- Key prop'larının benzersiz ve kararlı olması`,
+    "JavaScript": `- == yerine === kullanılmalı
+- var yerine const/let tercih edilmeli
+- Promise hataları yakalanmalı (.catch veya try/catch)
+- Prototype pollution riski kontrol edilmeli`,
+    "JavaScript/React": `- == yerine === kullanılmalı
+- React hook kuralları: hook'lar koşullu çağrılmamalı, bağımlılık dizileri eksiksiz olmalı
+- Gereksiz re-render kontrolü
+- useEffect cleanup fonksiyonu
+- Key prop'larının benzersiz ve kararlı olması`,
+    "Python": `- Type hint kullanımı tercih edilmeli
+- Mutable default argument kullanılmamalı (def f(x=[]))
+- Context manager (with) kullanılmalı (dosya/bağlantı işlemleri)
+- List comprehension ve generator uygun yerde kullanılmalı
+- f-string tercih edilmeli (format güvenliği)`,
+    "Go": `- Error handling: hataları yutmayın (_, err := ... sonrası kontrol)
+- Goroutine leak kontrolü (context.Cancel kullanımı)
+- defer kullanımı (resource cleanup)
+- Interface segregation: küçük interface'ler tercih edilmeli
+- Pointer vs value receiver tutarlılığı`,
+  };
+
+  return practices[lang] || `- Dil standartlarına ve idiomlarına uygunluk
+- Hata yönetimi en iyi pratikleri
+- Performans açısından verimli veri yapıları ve algoritmalar`;
+}
+
 export function buildCodeReviewPrompt(
   impact: ImpactResult,
   diffContent: string,
@@ -80,7 +143,11 @@ export function buildCodeReviewPrompt(
     .map((f) => `- **${f.name}** (${f.changeType === "direct" ? "doğrudan" : "dolaylı"}): ${f.description}`)
     .join("\n");
 
-  return `Sen deneyimli bir yazılım mühendisisin. Aşağıdaki PR diff'ini detaylı şekilde inceleyerek kod inceleme bulguları oluştur.
+  const detectedLang = detectLanguage(diffContent);
+  const langPractices = getLanguageBestPractices(detectedLang);
+
+  return `## Rol
+Sen SOLID prensiplerini, performans optimizasyonunu ve ${detectedLang} best practice'lerini bilen senior bir yazılım mühendisi ve kod incelemecisisin.
 
 ## Etki Özeti
 ${impact.summary}
@@ -91,9 +158,39 @@ ${impact.summary}
 ${features || "_Yok_"}
 
 ## Diff İçeriği
-\`\`\`diff
 ${diffContent}
-\`\`\`
+
+## İnceleme Kriterleri
+
+### 1. Bug & Güvenlik (en yüksek öncelik)
+- Mantık hataları, off-by-one, null/undefined erişimi
+- Güvenlik açıkları: injection, XSS, CSRF, hassas veri sızıntısı
+- Race condition ve eşzamanlılık sorunları
+- Hata yönetimi eksiklikleri (yakalanmayan hatalar, yutulmuş exception'lar)
+
+### 2. Performans
+- Gereksiz hesaplama veya tekrarlanan işlemler (döngü içinde döngü, N+1 sorgu)
+- Bellek sızıntısı riski (event listener temizlenmemesi, büyük obje referansları)
+- Gereksiz re-render veya DOM manipülasyonu
+- Eksik cache veya memoization fırsatları
+- Büyük payload veya verimsiz veri yapısı kullanımı
+
+### 3. SOLID Prensipleri
+- **SRP**: Bir sınıf/fonksiyon birden fazla sorumluluğa mı sahip?
+- **OCP**: Değişiklik yapmadan genişletilebilir mi?
+- **LSP**: Alt tipler üst tiplerin yerine sorunsuz kullanılabilir mi?
+- **ISP**: Gereksiz bağımlılıklara zorlanıyor mu?
+- **DIP**: Somut sınıflara mı yoksa soyutlamalara mı bağımlı?
+
+### 4. ${detectedLang} Best Practice'leri
+${langPractices}
+
+### 5. Bakım Kolaylığı & Stil
+- Kod okunabilirliği ve anlaşılırlığı
+- İsimlendirme tutarlılığı ve açıklayıcılığı
+- DRY prensibi: tekrarlanan kod blokları
+- Karmaşıklık (cyclomatic complexity) yüksekliği
+- Eksik veya yanıltıcı yorum/dokümantasyon
 
 ## Talimatlar
 1. En fazla **${maxItems}** bulgu oluştur
@@ -103,9 +200,9 @@ ${diffContent}
 5. Her bulgu için düzeltme önerisi (kod snippet) ver (mümkünse)
 6. Gerçek hataları ve güvenlik açıklarını önceliklendir
 7. False positive'lerden kaçın - sadece gerçek sorunları bildir
+8. SOLID ve performans bulgularını somut kodla destekle
 
-Yanıtı aşağıdaki JSON formatında ver:
-\`\`\`json
+Yanıtı yalnızca aşağıdaki yapıda bir JSON objesi olarak döndür (markdown code block kullanma):
 {
   "items": [
     {
@@ -119,6 +216,5 @@ Yanıtı aşağıdaki JSON formatında ver:
       "suggestion": "Düzeltme önerisi (kod snippet)"
     }
   ]
-}
-\`\`\``;
+}`;
 }

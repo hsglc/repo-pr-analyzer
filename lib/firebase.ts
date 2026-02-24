@@ -1,7 +1,11 @@
+import { getAuthToken } from "./request-context";
+
 const DATABASE_URL = process.env.FIREBASE_DATABASE_URL!;
 
 function buildUrl(path: string): string {
-  return `${DATABASE_URL}/${path}.json`;
+  const token = getAuthToken();
+  const base = `${DATABASE_URL}/${path}.json`;
+  return token ? `${base}?auth=${token}` : base;
 }
 
 export async function dbGet<T = unknown>(path: string): Promise<T | null> {

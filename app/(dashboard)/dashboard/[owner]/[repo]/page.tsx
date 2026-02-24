@@ -65,6 +65,7 @@ export default function RepoDetailPage() {
   const [branchAnalysisError, setBranchAnalysisError] = useState("");
   const [noDiff, setNoDiff] = useState(false);
   const [selectedModel, setSelectedModel] = useState("");
+  const [lastBranchAction, setLastBranchAction] = useState<"analysis" | "review" | null>(null);
 
   // Load PRs
   const loadPulls = useCallback(async (state: PRState) => {
@@ -154,6 +155,7 @@ export default function RepoDetailPage() {
     setBranchReport(null);
     setBranchCodeReview([]);
     setNoDiff(false);
+    setLastBranchAction("analysis");
 
     try {
       const res = await authFetch("/api/analyze/branch", {
@@ -206,6 +208,7 @@ export default function RepoDetailPage() {
     setBranchReport(null);
     setBranchCodeReview([]);
     setNoDiff(false);
+    setLastBranchAction("review");
 
     try {
       const res = await authFetch("/api/analyze/branch/code-review", {
@@ -535,10 +538,22 @@ export default function RepoDetailPage() {
                 <div className="flex flex-col items-center gap-3 rounded-xl bg-[var(--color-danger-light)] p-6 text-center">
                   <span className="text-[var(--color-danger)]">{branchAnalysisError}</span>
                   <button
-                    onClick={() => setBranchAnalysisError("")}
-                    className="rounded-lg border border-[var(--color-danger)] px-4 py-1.5 text-sm font-medium text-[var(--color-danger)] hover:bg-[var(--color-danger)] hover:text-white transition-colors"
+                    onClick={() => {
+                      setBranchAnalysisError("");
+                      if (lastBranchAction === "review") {
+                        handleBranchCodeReview();
+                      } else {
+                        handleBranchAnalysis();
+                      }
+                    }}
+                    disabled={branchAnalyzing || branchReviewing}
+                    className="flex items-center gap-2 rounded-lg border border-[var(--color-danger)] px-4 py-1.5 text-sm font-medium text-[var(--color-danger)] hover:bg-[var(--color-danger)] hover:text-white transition-colors disabled:opacity-50"
                   >
-                    Kapat
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="23 4 23 10 17 10"/>
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                    </svg>
+                    {branchAnalyzing || branchReviewing ? "Deneniyor..." : "Tekrar Dene"}
                   </button>
                 </div>
               )}

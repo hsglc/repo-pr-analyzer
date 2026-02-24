@@ -38,11 +38,11 @@ export class OpenAIProvider implements AIProvider {
   private model: string;
 
   constructor(apiKey: string, model: string = "gpt-4o") {
-    this.client = new OpenAI({ apiKey });
+    this.client = new OpenAI({ apiKey, maxRetries: 2 });
     this.model = model;
   }
 
-  private async callOpenAI(systemPrompt: string, userPrompt: string): Promise<string> {
+  private async callOpenAIOnce(systemPrompt: string, userPrompt: string): Promise<string> {
     const response = await this.client.chat.completions.create({
       model: this.model,
       response_format: { type: "json_object" },
@@ -58,6 +58,30 @@ export class OpenAIProvider implements AIProvider {
     const content = response.choices[0].message.content;
     if (!content) throw new Error("OpenAI'dan yanıt alınamadı");
     return content;
+  }
+
+  private async callOpenAI(systemPrompt: string, userPrompt: string): Promise<string> {
+    const APP_RETRY_DELAYS = [0, 10_000, 20_000];
+    let lastError: unknown;
+
+    for (let i = 0; i < APP_RETRY_DELAYS.length; i++) {
+      if (APP_RETRY_DELAYS[i] > 0) {
+        console.warn(`OpenAI API overloaded, ${APP_RETRY_DELAYS[i] / 1000}s bekleniyor... (deneme ${i + 1}/${APP_RETRY_DELAYS.length})`);
+        await new Promise((r) => setTimeout(r, APP_RETRY_DELAYS[i]));
+      }
+      try {
+        return await this.callOpenAIOnce(systemPrompt, userPrompt);
+      } catch (err) {
+        lastError = err;
+        const isOverloaded = err instanceof OpenAI.APIError && (err.status === 529 || err.status === 503);
+        if (isOverloaded && i < APP_RETRY_DELAYS.length - 1) {
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    throw lastError;
   }
 
   async generateTestScenarios(
