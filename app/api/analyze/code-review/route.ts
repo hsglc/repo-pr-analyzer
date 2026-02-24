@@ -3,7 +3,7 @@ import { z } from "zod";
 import { verifyAuth } from "@/lib/auth-server";
 import { findApiKeysByUserId } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
-import { runCodeReview } from "@/lib/analysis-service";
+import { runCodeReview, AnalysisError } from "@/lib/analysis-service";
 
 const CodeReviewSchema = z.object({
   owner: z.string().min(1),
@@ -58,6 +58,10 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
+    }
+    if (error instanceof AnalysisError) {
+      console.error(`Code review error [${error.step}]:`, error.cause || error.message);
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
     console.error("Code review error:", error);
     return NextResponse.json({ error: "Kod inceleme sırasında hata oluştu" }, { status: 500 });

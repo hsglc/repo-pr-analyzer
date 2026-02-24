@@ -3,7 +3,7 @@ import { z } from "zod";
 import { verifyAuth } from "@/lib/auth-server";
 import { findApiKeysByUserId, saveBranchAnalysis } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
-import { runBranchAnalysis } from "@/lib/analysis-service";
+import { runBranchAnalysis, AnalysisError } from "@/lib/analysis-service";
 
 const BranchAnalyzeSchema = z.object({
   owner: z.string().min(1),
@@ -83,15 +83,9 @@ export async function POST(request: Request) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
     }
-    const status = (err as { status?: number })?.status;
-    if (status === 404) {
-      return NextResponse.json({ error: "Branch bulunamadı" }, { status: 404 });
-    }
-    if (status === 403) {
-      return NextResponse.json(
-        { error: "API istek limiti aşıldı. Lütfen daha sonra tekrar deneyin." },
-        { status: 429 }
-      );
+    if (err instanceof AnalysisError) {
+      console.error(`Branch analyze error [${err.step}]:`, err.cause || err.message);
+      return NextResponse.json({ error: err.message }, { status: err.statusCode });
     }
     console.error("Branch analyze error:", err);
     return NextResponse.json(
