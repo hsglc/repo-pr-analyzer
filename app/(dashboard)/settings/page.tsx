@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ApiKeyForm } from "@/components/api-key-form";
 import { SettingsSkeleton } from "@/components/skeletons";
+import { authFetch } from "@/lib/api-client";
 
 interface KeyStatus {
   hasGithubToken: boolean;
@@ -17,7 +18,7 @@ export default function SettingsPage() {
 
   async function loadStatus() {
     try {
-      const res = await fetch("/api/settings");
+      const res = await authFetch("/api/settings");
       if (res.ok) {
         setStatus(await res.json());
       }

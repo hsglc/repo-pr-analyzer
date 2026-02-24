@@ -1,16 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { NextResponse } from "next/server";
+import { verifyAuth } from "@/lib/auth-server";
 import { findApiKeysByUserId } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { GitHubPlatform } from "@/lib/core/platforms/github-platform";
 
 export async function GET(
-  _req: NextRequest,
+  request: Request,
   { params }: { params: Promise<{ owner: string; repo: string; number: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  const auth = await verifyAuth(request);
+  if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
@@ -20,7 +19,7 @@ export async function GET(
     return NextResponse.json({ error: "Geçersiz PR numarası" }, { status: 400 });
   }
 
-  const userId = (session.user as { id: string }).id;
+  const userId = auth.uid;
   const apiKeys = await findApiKeysByUserId(userId);
 
   if (!apiKeys?.githubToken) {

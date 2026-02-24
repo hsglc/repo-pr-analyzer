@@ -5,10 +5,13 @@ import { useParams } from "next/navigation";
 import { PRListItem } from "@/components/pr-list-item";
 import { PRListSkeleton } from "@/components/skeletons";
 import Link from "next/link";
+import { authFetch } from "@/lib/api-client";
 
 interface PR {
   number: number;
   title: string;
+  state: string;
+  merged: boolean;
   author: { login: string; avatarUrl: string };
   labels: { name: string; color: string }[];
   createdAt: string;
@@ -31,7 +34,7 @@ export default function PullsPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(
+        const res = await authFetch(
           `/api/repos/${params.owner}/${params.repo}/pulls`
         );
         if (!res.ok) {
@@ -55,7 +58,7 @@ export default function PullsPage() {
 
     async function loadSummaries() {
       try {
-        const res = await fetch(
+        const res = await authFetch(
           `/api/analyze/repo-summary?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}`
         );
         if (res.ok) {
@@ -74,10 +77,10 @@ export default function PullsPage() {
       <div className="animate-fade-in">
         <div className="mb-6">
           <Link
-            href="/dashboard"
+            href={`/dashboard/${params.owner}/${params.repo}`}
             className="text-sm text-[var(--color-accent)] hover:underline"
           >
-            &larr; Repolara dön
+            &larr; Repoya dön
           </Link>
           <h2 className="mt-2 text-2xl font-bold text-[var(--color-text-primary)]">
             {params.owner}/{params.repo} - Açık PR&apos;ler
@@ -96,10 +99,10 @@ export default function PullsPage() {
     <div className="animate-fade-in">
       <div className="mb-6">
         <Link
-          href="/dashboard"
+          href={`/dashboard/${params.owner}/${params.repo}`}
           className="text-sm text-[var(--color-accent)] hover:underline"
         >
-          &larr; Repolara dön
+          &larr; Repoya dön
         </Link>
         <h2 className="mt-2 text-2xl font-bold text-[var(--color-text-primary)]">
           {params.owner}/{params.repo} - Açık PR&apos;ler

@@ -5,6 +5,8 @@ import Link from "next/link";
 interface PR {
   number: number;
   title: string;
+  state: string;
+  merged: boolean;
   author: { login: string; avatarUrl: string };
   labels: { name: string; color: string }[];
   createdAt: string;
@@ -30,6 +32,43 @@ const RISK_EMOJI: Record<string, string> = {
   high: "🟠",
   critical: "🔴",
 };
+
+function StateBadge({ state, merged }: { state: string; merged: boolean }) {
+  if (merged) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="18" cy="18" r="3"/>
+          <circle cx="6" cy="6" r="3"/>
+          <path d="M6 21V9a9 9 0 0 0 9 9"/>
+        </svg>
+        Birleştirildi
+      </span>
+    );
+  }
+  if (state === "closed") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+        Kapalı
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="16"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+      Açık
+    </span>
+  );
+}
 
 export function PRListItem({
   pr,
@@ -59,6 +98,7 @@ export function PRListItem({
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-[var(--color-text-muted)]">#{pr.number}</span>
             <h3 className="font-semibold text-[var(--color-text-primary)]">{pr.title}</h3>
+            <StateBadge state={pr.state} merged={pr.merged} />
           </div>
 
           <div className="mt-1.5 flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
@@ -106,13 +146,21 @@ export function PRListItem({
           )}
         </div>
 
-        <Link
-          href={`/dashboard/${owner}/${repo}/pulls/${pr.number}`}
-          className="btn-glow ml-4 rounded-lg px-4 py-2 text-sm font-medium text-white active:scale-95 transition-all"
-          style={{ background: "var(--gradient-primary)" }}
-        >
-          {analysisSummary ? "Analizi Gör" : "Analiz Et"}
-        </Link>
+        <div className="ml-4 flex items-center gap-2">
+          <Link
+            href={`/dashboard/${owner}/${repo}/pulls/${pr.number}`}
+            className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+          >
+            Detay
+          </Link>
+          <Link
+            href={`/dashboard/${owner}/${repo}/pulls/${pr.number}`}
+            className="btn-glow rounded-lg px-4 py-2 text-sm font-medium text-white active:scale-95 transition-all"
+            style={{ background: "var(--gradient-primary)" }}
+          >
+            {analysisSummary ? "Analizi Gör" : "Analiz Et"}
+          </Link>
+        </div>
       </div>
     </div>
   );

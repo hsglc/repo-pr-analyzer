@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { authFetch } from "@/lib/api-client";
 
 export function ApiKeyForm({
   defaultProvider,
@@ -28,7 +29,7 @@ export function ApiKeyForm({
       if (claudeApiKey) body.claudeApiKey = claudeApiKey;
       if (openaiApiKey) body.openaiApiKey = openaiApiKey;
 
-      const res = await fetch("/api/settings", {
+      const res = await authFetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

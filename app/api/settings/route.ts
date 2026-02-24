@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { z } from "zod";
-import { authOptions } from "@/lib/auth";
+import { verifyAuth } from "@/lib/auth-server";
 import { findApiKeysByUserId, upsertApiKeys } from "@/lib/db";
 import { encrypt } from "@/lib/encryption";
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+export async function GET(request: Request) {
+  const auth = await verifyAuth(request);
+  if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
-  const userId = (session.user as { id: string }).id;
+  const userId = auth.uid;
   const apiKeys = await findApiKeysByUserId(userId);
 
   return NextResponse.json({
@@ -30,13 +29,13 @@ const UpdateSchema = z.object({
 });
 
 export async function PUT(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  const auth = await verifyAuth(request);
+  if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
   }
 
   try {
-    const userId = (session.user as { id: string }).id;
+    const userId = auth.uid;
     const body = await request.json();
     const data = UpdateSchema.parse(body);
 

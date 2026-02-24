@@ -1,14 +1,6 @@
-import { dbGet, dbSet, dbUpdate, dbPush, emailToKey, repoToKey } from "./firebase";
+import { dbGet, dbSet, dbUpdate, dbPush, repoToKey } from "./firebase";
 
 // ─── Types ─────────────────────────────────────────────
-
-export interface DbUser {
-  id: string;
-  email: string;
-  passwordHash: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export interface DbApiKeys {
   userId: string;
@@ -26,33 +18,6 @@ export interface DbRepoConfig {
   impactMapConfig: string;
   createdAt: string;
   updatedAt: string;
-}
-
-// ─── User ──────────────────────────────────────────────
-
-export async function findUserByEmail(email: string): Promise<(DbUser & { apiKeys?: DbApiKeys | null }) | null> {
-  const emailKey = emailToKey(email);
-  const mapping = await dbGet<{ userId: string }>(`emailIndex/${emailKey}`);
-  if (!mapping) return null;
-
-  const user = await dbGet<Omit<DbUser, "id">>(`users/${mapping.userId}`);
-  if (!user) return null;
-
-  const apiKeys = await dbGet<DbApiKeys>(`apiKeys/${mapping.userId}`);
-
-  return { id: mapping.userId, ...user, apiKeys };
-}
-
-export async function createUser(email: string, passwordHash: string): Promise<DbUser> {
-  const now = new Date().toISOString();
-  const userData = { email, passwordHash, createdAt: now, updatedAt: now };
-
-  const id = await dbPush("users", userData);
-
-  // Email index for lookup
-  await dbSet(`emailIndex/${emailToKey(email)}`, { userId: id });
-
-  return { id, ...userData };
 }
 
 // ─── ApiKeys ───────────────────────────────────────────
@@ -179,6 +144,70 @@ export async function getRepoAnalysisSummary(
   }
 
   return summaries;
+}
+
+// ─── Branch Analysis ─────────────────────────────────
+
+export interface DbBranchAnalysis {
+  report: string;       // JSON.stringify(AnalysisReport)
+  headSha: string;
+  title: string;
+  baseBranch: string;
+  headBranch: string;
+  createdAt: string;
+  configSource: string;
+}
+
+export function branchPairToKey(headBranch: string, baseBranch: string): string {
+  const raw = `${headBranch}..${baseBranch}`;
+  return raw
+    .replace(/\//g, "___")
+    .replace(/\./g, ",")
+    .replace(/\$/g, "_D_")
+    .replace(/#/g, "_H_")
+    .replace(/\[/g, "_LB_")
+    .replace(/\]/g, "_RB_");
+}
+
+export async function saveBranchAnalysis(
+  userId: string,
+  repoFullName: string,
+  headBranch: string,
+  baseBranch: string,
+  data: DbBranchAnalysis
+): Promise<string> {
+  const repoKey = repoToKey(repoFullName);
+  const branchKey = branchPairToKey(headBranch, baseBranch);
+  return dbPush(`analyses/${userId}/${repoKey}/branch/${branchKey}`, data);
+}
+
+export async function getBranchAnalysisHistory(
+  userId: string,
+  repoFullName: string,
+  headBranch: string,
+  baseBranch: string
+): Promise<(DbBranchAnalysis & { id: string })[] | null> {
+  const repoKey = repoToKey(repoFullName);
+  const branchKey = branchPairToKey(headBranch, baseBranch);
+  const data = await dbGet<Record<string, DbBranchAnalysis>>(
+    `analyses/${userId}/${repoKey}/branch/${branchKey}`
+  );
+  if (!data) return null;
+
+  return Object.entries(data)
+    .map(([id, analysis]) => ({ id, ...analysis }))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function getLatestBranchAnalysis(
+  userId: string,
+  repoFullName: string,
+  headBranch: string,
+  baseBranch: string
+): Promise<(DbBranchAnalysis & { id: string }) | null> {
+  const history = await getBranchAnalysisHistory(userId, repoFullName, headBranch, baseBranch);
+  if (!history || history.length === 0) return null;
+  return history[0];
 }
 
 // ─── Scenario Checks ─────────────────────────────────

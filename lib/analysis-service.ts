@@ -17,6 +17,7 @@ export interface AnalysisParams {
   aiProvider: string;
   aiApiKey: string;
   userId: string;
+  model?: string;
 }
 
 export interface AnalysisResult {
@@ -31,7 +32,7 @@ export interface CodeReviewResult {
 }
 
 export async function runAnalysis(params: AnalysisParams): Promise<AnalysisResult> {
-  const { owner, repo, prNumber, githubToken, aiProvider, aiApiKey, userId } = params;
+  const { owner, repo, prNumber, githubToken, aiProvider, aiApiKey, userId, model } = params;
 
   // 1. Resolve config
   const { config: impactMapConfig, source: configSource } = await resolveConfig(owner, repo, githubToken, userId);
@@ -53,7 +54,7 @@ export async function runAnalysis(params: AnalysisParams): Promise<AnalysisResul
   const impact = analyzer.analyze(parsedFiles);
 
   // 5. AI test generation
-  const provider = createAIProvider(aiProvider, aiApiKey);
+  const provider = createAIProvider(aiProvider, aiApiKey, model);
   const testGen = new TestGenerator(provider);
   const testScenarios = await testGen.generate(impact, parsedFiles, 15);
 
@@ -77,7 +78,7 @@ export async function runAnalysis(params: AnalysisParams): Promise<AnalysisResul
 }
 
 export async function runCodeReview(params: AnalysisParams): Promise<CodeReviewResult> {
-  const { owner, repo, prNumber, githubToken, aiProvider, aiApiKey, userId } = params;
+  const { owner, repo, prNumber, githubToken, aiProvider, aiApiKey, userId, model } = params;
 
   // 1. Resolve config
   const { config: impactMapConfig } = await resolveConfig(owner, repo, githubToken, userId);
@@ -99,19 +100,107 @@ export async function runCodeReview(params: AnalysisParams): Promise<CodeReviewR
   const impact = analyzer.analyze(parsedFiles);
 
   // 5. AI code review
-  const provider = createAIProvider(aiProvider, aiApiKey);
+  const provider = createAIProvider(aiProvider, aiApiKey, model);
   const reviewGen = new CodeReviewGenerator(provider);
   const codeReview = await reviewGen.generate(impact, parsedFiles, 20);
 
   return { codeReview, headSha };
 }
 
-function createAIProvider(provider: string, apiKey: string): AIProvider {
+export interface BranchAnalysisParams {
+  owner: string;
+  repo: string;
+  baseBranch: string;
+  headBranch: string;
+  githubToken: string;
+  aiProvider: string;
+  aiApiKey: string;
+  userId: string;
+  model?: string;
+}
+
+export async function runBranchAnalysis(params: BranchAnalysisParams): Promise<AnalysisResult> {
+  const { owner, repo, baseBranch, headBranch, githubToken, aiProvider, aiApiKey, userId, model } = params;
+
+  // 1. Resolve config
+  const { config: impactMapConfig, source: configSource } = await resolveConfig(owner, repo, githubToken, userId);
+
+  // 2. Get diff between branches
+  const platform = new GitHubPlatform(githubToken, owner, repo);
+  const [rawDiff, compareInfo] = await Promise.all([
+    platform.compareBranches(baseBranch, headBranch),
+    platform.getBranchCompareInfo(baseBranch, headBranch),
+  ]);
+  const headSha = compareInfo.headSha;
+
+  // 3. Parse diff
+  const parser = new DiffParser();
+  const parsedFiles = parser.parse(rawDiff);
+
+  // 4. Impact analysis
+  const analyzer = new ImpactAnalyzer(impactMapConfig);
+  const impact = analyzer.analyze(parsedFiles);
+
+  // 5. AI test generation
+  const provider = createAIProvider(aiProvider, aiApiKey, model);
+  const testGen = new TestGenerator(provider);
+  const testScenarios = await testGen.generate(impact, parsedFiles, 15);
+
+  // 6. Build report
+  const report: AnalysisReport = {
+    prNumber: 0,
+    prTitle: `Branch Analizi: ${headBranch} vs ${baseBranch}`,
+    timestamp: new Date().toISOString(),
+    impact,
+    testScenarios,
+    codeReview: [],
+    stats: {
+      filesChanged: parsedFiles.length,
+      additions: parsedFiles.reduce((sum, f) => sum + f.additions, 0),
+      deletions: parsedFiles.reduce((sum, f) => sum + f.deletions, 0),
+      featuresAffected: impact.features.length,
+    },
+  };
+
+  return { report, configSource, headSha };
+}
+
+export async function runBranchCodeReview(params: BranchAnalysisParams): Promise<CodeReviewResult> {
+  const { owner, repo, baseBranch, headBranch, githubToken, aiProvider, aiApiKey, userId, model } = params;
+
+  // 1. Resolve config
+  const { config: impactMapConfig } = await resolveConfig(owner, repo, githubToken, userId);
+
+  // 2. Get diff between branches
+  const platform = new GitHubPlatform(githubToken, owner, repo);
+  const [rawDiff, compareInfo] = await Promise.all([
+    platform.compareBranches(baseBranch, headBranch),
+    platform.getBranchCompareInfo(baseBranch, headBranch),
+  ]);
+  const headSha = compareInfo.headSha;
+
+  // 3. Parse diff
+  const parser = new DiffParser();
+  const parsedFiles = parser.parse(rawDiff);
+
+  // 4. Impact analysis
+  const analyzer = new ImpactAnalyzer(impactMapConfig);
+  const impact = analyzer.analyze(parsedFiles);
+
+  // 5. AI code review
+  const provider = createAIProvider(aiProvider, aiApiKey, model);
+  const reviewGen = new CodeReviewGenerator(provider);
+  const codeReview = await reviewGen.generate(impact, parsedFiles, 20);
+
+  return { codeReview, headSha };
+}
+
+function createAIProvider(provider: string, apiKey: string, model?: string): AIProvider {
   switch (provider) {
     case "openai":
-      return new OpenAIProvider(apiKey);
+      return new OpenAIProvider(apiKey, model);
     case "claude":
     default:
-      return new ClaudeProvider(apiKey);
+      return new ClaudeProvider(apiKey, model);
   }
 }

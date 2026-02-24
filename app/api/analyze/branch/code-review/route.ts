@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyAuth } from "@/lib/auth-server";
-import { findApiKeysByUserId, saveAnalysis } from "@/lib/db";
+import { findApiKeysByUserId } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
-import { runAnalysis } from "@/lib/analysis-service";
+import { runBranchCodeReview } from "@/lib/analysis-service";
 
-const AnalyzeSchema = z.object({
+const BranchCodeReviewSchema = z.object({
   owner: z.string().min(1),
   repo: z.string().min(1),
-  prNumber: z.number().int().positive(),
+  baseBranch: z.string().min(1),
+  headBranch: z.string().min(1),
   model: z.string().optional(),
 });
 
@@ -21,7 +22,14 @@ export async function POST(request: Request) {
   try {
     const userId = auth.uid;
     const body = await request.json();
-    const { owner, repo, prNumber, model } = AnalyzeSchema.parse(body);
+    const { owner, repo, baseBranch, headBranch, model } = BranchCodeReviewSchema.parse(body);
+
+    if (baseBranch === headBranch) {
+      return NextResponse.json(
+        { error: "Aynı branch seçilemez. Lütfen farklı branch'ler seçin." },
+        { status: 400 }
+      );
+    }
 
     const apiKeys = await findApiKeysByUserId(userId);
     if (!apiKeys?.githubToken) {
@@ -43,10 +51,11 @@ export async function POST(request: Request) {
       aiApiKey = decrypt(apiKeys.claudeApiKey);
     }
 
-    const { report, configSource, headSha } = await runAnalysis({
+    const { codeReview, headSha } = await runBranchCodeReview({
       owner,
       repo,
-      prNumber,
+      baseBranch,
+      headBranch,
       githubToken,
       aiProvider: apiKeys.aiProvider,
       aiApiKey,
@@ -54,25 +63,25 @@ export async function POST(request: Request) {
       model,
     });
 
-    // Save to Firebase (non-critical - don't let save failure break the response)
-    try {
-      await saveAnalysis(userId, `${owner}/${repo}`, prNumber, {
-        report: JSON.stringify(report),
-        commitSha: headSha,
-        prTitle: report.prTitle,
-        createdAt: new Date().toISOString(),
-        configSource,
-      });
-    } catch (saveError) {
-      console.error("Analiz kaydedilemedi (Firebase):", saveError);
+    return NextResponse.json({ codeReview, headSha });
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError) {
+      return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
     }
-
-    return NextResponse.json({ ...report, commitSha: headSha });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
+    const status = (err as { status?: number })?.status;
+    if (status === 404) {
+      return NextResponse.json({ error: "Branch bulunamadı" }, { status: 404 });
     }
-    console.error("Analyze error:", error);
-    return NextResponse.json({ error: "Analiz sırasında hata oluştu" }, { status: 500 });
+    if (status === 403) {
+      return NextResponse.json(
+        { error: "API istek limiti aşıldı. Lütfen daha sonra tekrar deneyin." },
+        { status: 429 }
+      );
+    }
+    console.error("Branch code review error:", err);
+    return NextResponse.json(
+      { error: "Branch kod inceleme sırasında hata oluştu" },
+      { status: 500 }
+    );
   }
 }

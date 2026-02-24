@@ -24,9 +24,31 @@ export async function GET(
   try {
     const token = decrypt(apiKeys.githubToken);
     const platform = new GitHubPlatform(token, owner, repo);
-    const details = await platform.getRepoDetails();
-    return NextResponse.json(details);
-  } catch {
-    return NextResponse.json({ error: "Repo detayları alınamadı" }, { status: 500 });
+
+    const [branches, repoDetails] = await Promise.all([
+      platform.listBranches(),
+      platform.getRepoDetails(),
+    ]);
+
+    return NextResponse.json({
+      branches,
+      defaultBranch: repoDetails.defaultBranch,
+    });
+  } catch (err: unknown) {
+    const status = (err as { status?: number })?.status;
+    if (status === 404) {
+      return NextResponse.json({ error: "Repo bulunamadı" }, { status: 404 });
+    }
+    if (status === 403) {
+      return NextResponse.json(
+        { error: "API istek limiti aşıldı. Lütfen daha sonra tekrar deneyin." },
+        { status: 429 }
+      );
+    }
+    console.error("Branches API error:", err);
+    return NextResponse.json(
+      { error: "Branch'ler yüklenirken hata oluştu" },
+      { status: 500 }
+    );
   }
 }

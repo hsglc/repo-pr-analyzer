@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { authFetch } from "@/lib/api-client";
 
 interface PRDetails {
   title: string;
@@ -40,7 +41,7 @@ export function PRDetailCard({ owner, repo, prNumber }: { owner: string; repo: s
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/details`);
+        const res = await authFetch(`/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/details`);
         if (res.ok) {
           setDetails(await res.json());
         }
