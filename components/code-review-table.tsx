@@ -13,11 +13,35 @@ const SEVERITY_ORDER: Record<string, number> = {
   suggestion: 3,
 };
 
-const SEVERITY_CONFIG: Record<string, { emoji: string; bg: string; text: string }> = {
-  critical: { emoji: "🔴", bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-400" },
-  warning: { emoji: "🟡", bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-400" },
-  info: { emoji: "🔵", bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-400" },
-  suggestion: { emoji: "💡", bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-700 dark:text-purple-400" },
+const SEVERITY_CONFIG: Record<string, { emoji: string; bg: string; text: string; gradient: string; barColor: string }> = {
+  critical: {
+    emoji: "🔴",
+    bg: "bg-red-100 dark:bg-red-900/30",
+    text: "text-red-700 dark:text-red-400",
+    gradient: "from-red-500 to-rose-500",
+    barColor: "#dc2626",
+  },
+  warning: {
+    emoji: "🟡",
+    bg: "bg-yellow-100 dark:bg-yellow-900/30",
+    text: "text-yellow-700 dark:text-yellow-400",
+    gradient: "from-yellow-500 to-amber-500",
+    barColor: "#d97706",
+  },
+  info: {
+    emoji: "🔵",
+    bg: "bg-blue-100 dark:bg-blue-900/30",
+    text: "text-blue-700 dark:text-blue-400",
+    gradient: "from-blue-500 to-cyan-500",
+    barColor: "#2563eb",
+  },
+  suggestion: {
+    emoji: "💡",
+    bg: "bg-purple-100 dark:bg-purple-900/30",
+    text: "text-purple-700 dark:text-purple-400",
+    gradient: "from-purple-500 to-violet-500",
+    barColor: "#7c3aed",
+  },
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -122,66 +146,76 @@ function ReviewItemCard({
   const location = item.line ? `${item.file}:${item.line}` : item.file;
 
   return (
-    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)]">
-      <button
-        onClick={onToggle}
-        className="flex w-full items-center justify-between p-4 text-left"
-        aria-expanded={open}
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}>
-            {config.emoji} {item.severity}
-          </span>
-          <span className="text-sm font-medium text-[var(--color-text-muted)] shrink-0">{item.id}</span>
-          <span className="font-medium text-[var(--color-text-primary)] truncate">{item.title}</span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0 ml-2">
-          <span className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-muted)]">
-            {CATEGORY_LABELS[item.category] || item.category}
-          </span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={`text-[var(--color-text-muted)] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] overflow-hidden">
+      <div className="flex">
+        {/* Severity color bar on left */}
+        <div
+          className="w-1 shrink-0"
+          style={{ backgroundColor: config.barColor }}
+        />
+
+        <div className="flex-1">
+          <button
+            onClick={onToggle}
+            className="flex w-full items-center justify-between p-4 text-left"
+            aria-expanded={open}
           >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
-      </button>
-
-      <div
-        ref={contentRef}
-        className="overflow-hidden transition-all duration-200"
-        style={{
-          maxHeight: open ? contentRef.current?.scrollHeight ?? 500 : 0,
-        }}
-      >
-        <div className="border-t border-[var(--color-border)] p-4">
-          <div className="mb-3">
-            <code className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-secondary)]">
-              {location}
-            </code>
-          </div>
-
-          <p className="mb-3 text-sm text-[var(--color-text-secondary)] whitespace-pre-wrap">
-            {item.description}
-          </p>
-
-          {item.suggestion && (
-            <div>
-              <h4 className="mb-1 text-sm font-semibold text-[var(--color-text-primary)]">Düzeltme Önerisi:</h4>
-              <pre className="overflow-x-auto rounded-lg bg-[var(--color-bg-tertiary)] p-3 text-xs text-[var(--color-text-primary)]">
-                <code>{item.suggestion}</code>
-              </pre>
+            <div className="flex items-center gap-3 min-w-0">
+              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gradient-to-r ${config.gradient} text-white`}>
+                {config.emoji} {item.severity}
+              </span>
+              <span className="text-sm font-medium text-[var(--color-text-muted)] shrink-0">{item.id}</span>
+              <span className="font-medium text-[var(--color-text-primary)] truncate">{item.title}</span>
             </div>
-          )}
+            <div className="flex items-center gap-2 shrink-0 ml-2">
+              <span className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-muted)]">
+                {CATEGORY_LABELS[item.category] || item.category}
+              </span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`text-[var(--color-text-muted)] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </div>
+          </button>
+
+          <div
+            ref={contentRef}
+            className="overflow-hidden transition-all duration-200"
+            style={{
+              maxHeight: open ? contentRef.current?.scrollHeight ?? 500 : 0,
+            }}
+          >
+            <div className="border-t border-[var(--color-border)] p-4">
+              <div className="mb-3">
+                <code className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-secondary)]">
+                  {location}
+                </code>
+              </div>
+
+              <p className="mb-3 text-sm text-[var(--color-text-secondary)] whitespace-pre-wrap">
+                {item.description}
+              </p>
+
+              {item.suggestion && (
+                <div>
+                  <h4 className="mb-1 text-sm font-semibold text-[var(--color-text-primary)]">Düzeltme Önerisi:</h4>
+                  <pre className="overflow-x-auto rounded-lg p-3 text-xs" style={{ backgroundColor: "#1e1e2e", color: "#cdd6f4" }}>
+                    <code>{item.suggestion}</code>
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

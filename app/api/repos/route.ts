@@ -39,6 +39,8 @@ export async function GET() {
       language: r.language,
       updatedAt: r.updated_at,
       isPrivate: r.private,
+      stargazersCount: r.stargazers_count,
+      forksCount: r.forks_count,
     }));
 
     return NextResponse.json(mapped);
