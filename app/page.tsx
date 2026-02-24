@@ -28,9 +28,9 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen overflow-hidden" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)" }}>
       {/* Floating orbs */}
-      <div className="auth-orb" style={{ width: 400, height: 400, top: "5%", left: "10%", background: "#3b82f6" }} />
-      <div className="auth-orb" style={{ width: 350, height: 350, bottom: "10%", right: "5%", background: "#7c3aed", animationDelay: "2s" }} />
-      <div className="auth-orb" style={{ width: 250, height: 250, top: "60%", left: "50%", background: "#ec4899", animationDelay: "4s", opacity: 0.15 }} />
+      <div className="auth-orb hidden sm:block" style={{ width: 400, height: 400, top: "5%", left: "10%", background: "#3b82f6" }} />
+      <div className="auth-orb hidden sm:block" style={{ width: 350, height: 350, bottom: "10%", right: "5%", background: "#7c3aed", animationDelay: "2s" }} />
+      <div className="auth-orb hidden sm:block" style={{ width: 250, height: 250, top: "60%", left: "50%", background: "#ec4899", animationDelay: "4s", opacity: 0.15 }} />
 
       {/* Grid overlay */}
       <div
@@ -42,7 +42,7 @@ export default function LandingPage() {
       />
 
       {/* Navbar */}
-      <nav className="relative z-20 flex items-center justify-between px-6 py-4 md:px-12">
+      <nav className="relative z-20 flex items-center justify-between px-4 py-4 sm:px-6 md:px-12">
         <div className="flex items-center gap-2">
           <span
             className="text-2xl font-bold"
@@ -52,16 +52,16 @@ export default function LandingPage() {
           </span>
           <span className="text-sm text-slate-400">PR Impact Analyzer</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/login"
-            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
+            className="rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors sm:px-4"
           >
             Giris Yap
           </Link>
           <Link
             href="/register"
-            className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-all active:scale-95"
+            className="rounded-lg px-3 py-2 text-sm font-medium text-white transition-all active:scale-95 sm:px-4"
             style={{ background: "linear-gradient(135deg, #3b82f6, #7c3aed)" }}
           >
             Kayit Ol
@@ -70,8 +70,8 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="relative z-10 mx-auto max-w-4xl px-6 pt-20 pb-16 text-center md:pt-32">
-        <h1 className="mb-6 text-4xl font-bold leading-tight text-white md:text-6xl animate-fade-in">
+      <section className="relative z-10 mx-auto max-w-4xl px-4 pt-12 pb-10 text-center sm:px-6 md:pt-20 md:pb-16 lg:pt-32">
+        <h1 className="mb-6 text-3xl font-bold leading-tight text-white sm:text-4xl md:text-6xl animate-fade-in">
           PR Degisikliklerini{" "}
           <span
             className="animate-gradient-text"
@@ -84,7 +84,7 @@ export default function LandingPage() {
           AI destekli etki analizi, otomatik test senaryolari ve kod inceleme ile
           pull request&apos;lerinizi daha hizli ve guvenli bir sekilde inceleyin.
         </p>
-        <div className="flex items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 animate-fade-in" style={{ animationDelay: "0.2s" }}>
           <Link
             href="/register"
             className="btn-glow rounded-xl px-8 py-3 text-base font-semibold text-white active:scale-95 transition-all"
@@ -102,9 +102,9 @@ export default function LandingPage() {
       </section>
 
       {/* Features Grid */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 py-16">
-        <h2 className="mb-12 text-center text-2xl font-bold text-white">Ozellikler</h2>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 stagger-children">
+      <section className="relative z-10 mx-auto max-w-5xl px-4 py-12 sm:px-6 md:py-16">
+        <h2 className="mb-8 text-center text-2xl font-bold text-white md:mb-12">Ozellikler</h2>
+        <div className="grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-2 stagger-children">
           {/* PR Analizi */}
           <div className="glass rounded-2xl p-6 card-hover">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl" style={{ background: "linear-gradient(135deg, #3b82f6, #2563eb)" }}>
@@ -170,7 +170,7 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="relative z-10 mx-auto max-w-4xl px-6 py-16">
+      <section className="relative z-10 mx-auto max-w-4xl px-4 py-12 sm:px-6 md:py-16">
         <h2 className="mb-12 text-center text-2xl font-bold text-white">Nasil Calisir?</h2>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div className="text-center">
@@ -198,8 +198,8 @@ export default function LandingPage() {
       </section>
 
       {/* Footer CTA */}
-      <section className="relative z-10 mx-auto max-w-3xl px-6 py-16 text-center">
-        <div className="glass rounded-3xl p-10">
+      <section className="relative z-10 mx-auto max-w-3xl px-4 py-12 text-center sm:px-6 md:py-16">
+        <div className="glass rounded-3xl p-6 sm:p-10">
           <h2 className="mb-4 text-2xl font-bold text-white">Hemen Baslayin</h2>
           <p className="mb-8 text-slate-400">
             PR analizinizi AI ile guclandirin. Ucretsiz hesap olusturun.

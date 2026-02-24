@@ -46,7 +46,7 @@ export function TestScenariosTable({
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-lg font-bold text-[var(--color-text-primary)]">
           Test Senaryoları
           {checkedIds ? (
@@ -59,7 +59,7 @@ export function TestScenariosTable({
             </span>
           )}
         </h3>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}

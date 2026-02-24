@@ -61,13 +61,13 @@ export function CommitHistory({ owner, repo, prNumber }: { owner: string; repo: 
       {/* Timeline line */}
       <div className="absolute left-[19px] top-0 bottom-0 w-px bg-[var(--color-border)]" />
 
-      <div className="space-y-0">
+      <div className="space-y-0" style={{ wordBreak: "break-word" }}>
         {commits.map((commit, i) => {
           const firstLine = commit.message.split("\n")[0];
           const hasMore = commit.message.includes("\n");
 
           return (
-            <div key={commit.sha} className="relative flex gap-4 pb-6">
+            <div key={commit.sha} className="relative flex gap-3 pb-6 sm:gap-4">
               {/* Timeline dot */}
               <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center">
                 {commit.author.avatarUrl ? (

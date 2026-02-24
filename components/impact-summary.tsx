@@ -30,8 +30,8 @@ export function ImpactSummary({ report }: { report: AnalysisReport }) {
       <p className="mb-5 text-sm text-[var(--color-text-secondary)]">{impact.summary}</p>
 
       {/* Stats Grid + Donut */}
-      <div className="flex gap-6">
-        <div className="flex-1 grid grid-cols-2 gap-3">
+      <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
+        <div className="flex-1 grid grid-cols-2 gap-2 sm:gap-3">
           {/* Files Changed */}
           <div className="rounded-lg bg-[var(--color-accent-light)] p-3">
             <div className="flex items-center gap-2 mb-1">
@@ -83,7 +83,7 @@ export function ImpactSummary({ report }: { report: AnalysisReport }) {
         </div>
 
         {/* CSS-only Donut Chart */}
-        <div className="flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center justify-center mx-auto sm:mx-0">
           <div
             className="relative flex h-24 w-24 items-center justify-center rounded-full"
             style={{

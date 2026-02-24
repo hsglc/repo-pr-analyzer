@@ -12,7 +12,7 @@ export default function AuthLayout({
     >
       {/* Animated floating orbs */}
       <div
-        className="auth-orb"
+        className="auth-orb hidden sm:block"
         style={{
           width: 300,
           height: 300,
@@ -23,7 +23,7 @@ export default function AuthLayout({
         }}
       />
       <div
-        className="auth-orb"
+        className="auth-orb hidden sm:block"
         style={{
           width: 250,
           height: 250,
@@ -34,7 +34,7 @@ export default function AuthLayout({
         }}
       />
       <div
-        className="auth-orb"
+        className="auth-orb hidden sm:block"
         style={{
           width: 200,
           height: 200,
@@ -60,7 +60,7 @@ export default function AuthLayout({
         {/* Logo */}
         <div className="mb-8 text-center">
           <h1
-            className="text-4xl font-bold"
+            className="text-3xl font-bold sm:text-4xl"
             style={{
               background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
               WebkitBackgroundClip: "text",
@@ -73,7 +73,7 @@ export default function AuthLayout({
         </div>
 
         {/* Glass card */}
-        <div className="glass rounded-2xl p-8 shadow-2xl">
+        <div className="glass rounded-2xl p-5 shadow-2xl sm:p-8">
           {children}
         </div>
       </div>

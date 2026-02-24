@@ -93,7 +93,7 @@ export function DiffViewer({ owner, repo, prNumber }: { owner: string; repo: str
                   <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
                   <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
                 </svg>
-                <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">{file.path}</span>
+                <span className="text-sm font-medium text-[var(--color-text-primary)] truncate max-w-[200px] sm:max-w-none">{file.path}</span>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-3">
                 <span className="text-xs font-medium text-[var(--color-success)]">+{file.additions}</span>
@@ -118,7 +118,7 @@ export function DiffViewer({ owner, repo, prNumber }: { owner: string; repo: str
             {/* Diff content */}
             {expanded && (
               <div className="border-t border-[var(--color-border)] overflow-x-auto">
-                <table className="w-full text-xs font-mono" style={{ borderCollapse: "collapse" }}>
+                <table className="w-full text-[11px] font-mono sm:text-xs" style={{ borderCollapse: "collapse" }}>
                   <tbody>
                     {file.lines.map((line, idx) => {
                       let bg = "";
@@ -136,10 +136,10 @@ export function DiffViewer({ owner, repo, prNumber }: { owner: string; repo: str
 
                       return (
                         <tr key={idx} className={bg}>
-                          <td className="w-10 select-none px-2 py-0.5 text-right text-[var(--color-text-muted)] border-r border-[var(--color-border)]">
+                          <td className="hidden w-10 select-none px-2 py-0.5 text-right text-[var(--color-text-muted)] border-r border-[var(--color-border)] sm:table-cell">
                             {line.type !== "header" && line.type !== "add" ? line.oldNum || "" : ""}
                           </td>
-                          <td className="w-10 select-none px-2 py-0.5 text-right text-[var(--color-text-muted)] border-r border-[var(--color-border)]">
+                          <td className="w-8 select-none px-1 py-0.5 text-right text-[var(--color-text-muted)] border-r border-[var(--color-border)] sm:w-10 sm:px-2">
                             {line.type !== "header" && line.type !== "del" ? line.newNum || "" : ""}
                           </td>
                           <td className={`px-3 py-0.5 whitespace-pre ${textColor}`}>

@@ -412,7 +412,7 @@ export default function AnalysisPage() {
 
       {/* Status Banner */}
       {statusInfo && report && !loading && (
-        <div className={`mb-4 flex items-center justify-between rounded-xl p-4 ${
+        <div className={`mb-4 flex flex-col gap-3 rounded-xl p-4 sm:flex-row sm:items-center sm:justify-between ${
           statusInfo.needsReanalysis
             ? "bg-[var(--color-warning-light)] border border-[var(--color-warning)]/20"
             : "bg-[var(--color-success-light)] border border-[var(--color-success)]/20"
@@ -482,7 +482,7 @@ export default function AnalysisPage() {
 
       {/* Tabs - Pill/Segment style */}
       {!loading && report && (
-        <div className="mb-6 flex gap-1 rounded-xl bg-[var(--color-bg-tertiary)] p-1">
+        <div className="mb-6 flex gap-1 overflow-x-auto rounded-xl bg-[var(--color-bg-tertiary)] p-1">
           {tabs.map((tab) => (
             <button
               key={tab.key}
@@ -490,14 +490,14 @@ export default function AnalysisPage() {
                 setActiveTab(tab.key);
                 if (tab.key === "history") loadHistory();
               }}
-              className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all sm:px-4 ${
                 activeTab === tab.key
                   ? "bg-[var(--color-bg-primary)] text-[var(--color-accent)] shadow-sm"
                   : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               }`}
             >
               {tab.icon}
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>
@@ -630,8 +630,8 @@ export default function AnalysisPage() {
                       : "border-[var(--color-border)] bg-[var(--color-bg-primary)]"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                       <span className="text-sm font-medium text-[var(--color-text-primary)]">
                         {new Date(item.createdAt).toLocaleString("tr-TR")}
                       </span>

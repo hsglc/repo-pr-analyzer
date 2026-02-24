@@ -128,7 +128,7 @@ export default function DashboardPage() {
     <div className="animate-fade-in">
       {/* Stats Bar */}
       {repos.length > 0 && (
-        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
           <div className="rounded-xl p-4" style={{ background: "var(--gradient-primary)" }}>
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
@@ -195,7 +195,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">Repolar</h2>
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
@@ -209,7 +209,7 @@ export default function DashboardPage() {
             placeholder="Repo ara..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] pl-10 pr-4 py-2.5 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] w-64"
+            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] pl-10 pr-4 py-2.5 text-sm text-[var(--color-text-primary)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] w-full sm:w-64"
           />
         </div>
       </div>
