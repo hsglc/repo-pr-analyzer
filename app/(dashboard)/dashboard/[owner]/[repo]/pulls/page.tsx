@@ -9,6 +9,8 @@ import Link from "next/link";
 interface PR {
   number: number;
   title: string;
+  state: string;
+  merged: boolean;
   author: { login: string; avatarUrl: string };
   labels: { name: string; color: string }[];
   createdAt: string;
@@ -74,10 +76,10 @@ export default function PullsPage() {
       <div className="animate-fade-in">
         <div className="mb-6">
           <Link
-            href="/dashboard"
+            href={`/dashboard/${params.owner}/${params.repo}`}
             className="text-sm text-[var(--color-accent)] hover:underline"
           >
-            &larr; Repolara dön
+            &larr; Repoya dön
           </Link>
           <h2 className="mt-2 text-2xl font-bold text-[var(--color-text-primary)]">
             {params.owner}/{params.repo} - Açık PR&apos;ler
@@ -96,10 +98,10 @@ export default function PullsPage() {
     <div className="animate-fade-in">
       <div className="mb-6">
         <Link
-          href="/dashboard"
+          href={`/dashboard/${params.owner}/${params.repo}`}
           className="text-sm text-[var(--color-accent)] hover:underline"
         >
-          &larr; Repolara dön
+          &larr; Repoya dön
         </Link>
         <h2 className="mt-2 text-2xl font-bold text-[var(--color-text-primary)]">
           {params.owner}/{params.repo} - Açık PR&apos;ler

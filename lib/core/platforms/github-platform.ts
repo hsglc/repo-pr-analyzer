@@ -223,6 +223,64 @@ export class GitHubPlatform {
     });
   }
 
+  async listBranches(): Promise<{ name: string; protected: boolean; sha: string }[]> {
+    const branches: { name: string; protected: boolean; sha: string }[] = [];
+    let page = 1;
+    while (true) {
+      const { data } = await this.octokit.repos.listBranches({
+        owner: this.owner,
+        repo: this.repo,
+        per_page: 100,
+        page,
+      });
+      if (data.length === 0) break;
+      branches.push(
+        ...data.map((b) => ({
+          name: b.name,
+          protected: b.protected,
+          sha: b.commit.sha,
+        }))
+      );
+      if (data.length < 100) break;
+      page++;
+    }
+    return branches;
+  }
+
+  async compareBranches(base: string, head: string): Promise<string> {
+    const { data } = await this.octokit.repos.compareCommitsWithBasehead({
+      owner: this.owner,
+      repo: this.repo,
+      basehead: `${base}...${head}`,
+      mediaType: { format: "diff" },
+    });
+    return data as unknown as string;
+  }
+
+  async getBranchCompareInfo(
+    base: string,
+    head: string
+  ): Promise<{
+    aheadBy: number;
+    behindBy: number;
+    totalCommits: number;
+    status: string;
+    headSha: string;
+  }> {
+    const { data } = await this.octokit.repos.compareCommitsWithBasehead({
+      owner: this.owner,
+      repo: this.repo,
+      basehead: `${base}...${head}`,
+    });
+    return {
+      aheadBy: data.ahead_by,
+      behindBy: data.behind_by,
+      totalCommits: data.total_commits,
+      status: data.status,
+      headSha: data.commits.length > 0 ? data.commits[data.commits.length - 1].sha : "",
+    };
+  }
+
   async upsertComment(
     prNumber: number,
     body: string,

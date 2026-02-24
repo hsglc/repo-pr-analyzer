@@ -42,7 +42,7 @@ export function RepoCard({ repo }: { repo: Repo }) {
 
   return (
     <Link
-      href={`/dashboard/${repo.owner}/${repo.name}/pulls`}
+      href={`/dashboard/${repo.owner}/${repo.name}`}
       className="gradient-border card-hover block rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] p-4 shadow-sm overflow-hidden"
     >
       {/* Language color bar at top */}

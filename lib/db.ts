@@ -181,6 +181,70 @@ export async function getRepoAnalysisSummary(
   return summaries;
 }
 
+// ─── Branch Analysis ─────────────────────────────────
+
+export interface DbBranchAnalysis {
+  report: string;       // JSON.stringify(AnalysisReport)
+  headSha: string;
+  title: string;
+  baseBranch: string;
+  headBranch: string;
+  createdAt: string;
+  configSource: string;
+}
+
+export function branchPairToKey(headBranch: string, baseBranch: string): string {
+  const raw = `${headBranch}..${baseBranch}`;
+  return raw
+    .replace(/\//g, "___")
+    .replace(/\./g, ",")
+    .replace(/\$/g, "_D_")
+    .replace(/#/g, "_H_")
+    .replace(/\[/g, "_LB_")
+    .replace(/\]/g, "_RB_");
+}
+
+export async function saveBranchAnalysis(
+  userId: string,
+  repoFullName: string,
+  headBranch: string,
+  baseBranch: string,
+  data: DbBranchAnalysis
+): Promise<string> {
+  const repoKey = repoToKey(repoFullName);
+  const branchKey = branchPairToKey(headBranch, baseBranch);
+  return dbPush(`analyses/${userId}/${repoKey}/branch/${branchKey}`, data);
+}
+
+export async function getBranchAnalysisHistory(
+  userId: string,
+  repoFullName: string,
+  headBranch: string,
+  baseBranch: string
+): Promise<(DbBranchAnalysis & { id: string })[] | null> {
+  const repoKey = repoToKey(repoFullName);
+  const branchKey = branchPairToKey(headBranch, baseBranch);
+  const data = await dbGet<Record<string, DbBranchAnalysis>>(
+    `analyses/${userId}/${repoKey}/branch/${branchKey}`
+  );
+  if (!data) return null;
+
+  return Object.entries(data)
+    .map(([id, analysis]) => ({ id, ...analysis }))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function getLatestBranchAnalysis(
+  userId: string,
+  repoFullName: string,
+  headBranch: string,
+  baseBranch: string
+): Promise<(DbBranchAnalysis & { id: string }) | null> {
+  const history = await getBranchAnalysisHistory(userId, repoFullName, headBranch, baseBranch);
+  if (!history || history.length === 0) return null;
+  return history[0];
+}
+
 // ─── Scenario Checks ─────────────────────────────────
 
 export async function saveScenarioChecks(

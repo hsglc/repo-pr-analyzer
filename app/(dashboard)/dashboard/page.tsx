@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { RepoCard } from "@/components/repo-card";
 import { RepoCardSkeletonGrid } from "@/components/skeletons";
@@ -18,12 +18,18 @@ interface Repo {
   forksCount?: number;
 }
 
+type Visibility = "all" | "public" | "private";
+type SortBy = "updated" | "name" | "stars";
+
 export default function DashboardPage() {
   const router = useRouter();
   const [repos, setRepos] = useState<Repo[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [filterLang, setFilterLang] = useState("");
+  const [filterVisibility, setFilterVisibility] = useState<Visibility>("all");
+  const [sortBy, setSortBy] = useState<SortBy>("updated");
 
   useEffect(() => {
     async function load() {
@@ -48,11 +54,47 @@ export default function DashboardPage() {
     load();
   }, [router]);
 
-  const filtered = repos.filter(
-    (r) =>
-      r.name.toLowerCase().includes(search.toLowerCase()) ||
-      r.description?.toLowerCase().includes(search.toLowerCase())
-  );
+  // Collect unique languages
+  const languages = useMemo(() => {
+    const langSet = new Set<string>();
+    repos.forEach((r) => {
+      if (r.language) langSet.add(r.language);
+    });
+    return Array.from(langSet).sort();
+  }, [repos]);
+
+  // Filter & sort
+  const filtered = useMemo(() => {
+    let result = repos.filter(
+      (r) =>
+        r.name.toLowerCase().includes(search.toLowerCase()) ||
+        r.description?.toLowerCase().includes(search.toLowerCase())
+    );
+
+    if (filterLang) {
+      result = result.filter((r) => r.language === filterLang);
+    }
+
+    if (filterVisibility === "public") {
+      result = result.filter((r) => !r.isPrivate);
+    } else if (filterVisibility === "private") {
+      result = result.filter((r) => r.isPrivate);
+    }
+
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "stars":
+          return (b.stargazersCount || 0) - (a.stargazersCount || 0);
+        case "updated":
+        default:
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      }
+    });
+
+    return result;
+  }, [repos, search, filterLang, filterVisibility, sortBy]);
 
   // Stats
   const totalRepos = repos.length;
@@ -152,7 +194,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">Repolar</h2>
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
@@ -171,6 +213,53 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Filter bar */}
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        {/* Visibility pills */}
+        <div className="flex gap-1 rounded-lg bg-[var(--color-bg-tertiary)] p-0.5">
+          {([
+            { key: "all" as Visibility, label: "Tümü" },
+            { key: "public" as Visibility, label: "Public" },
+            { key: "private" as Visibility, label: "Private" },
+          ]).map((v) => (
+            <button
+              key={v.key}
+              onClick={() => setFilterVisibility(v.key)}
+              className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
+                filterVisibility === v.key
+                  ? "bg-[var(--color-bg-primary)] text-[var(--color-accent)] shadow-sm"
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+              }`}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Language filter */}
+        <select
+          value={filterLang}
+          onChange={(e) => setFilterLang(e.target.value)}
+          className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] px-3 py-1.5 text-xs text-[var(--color-text-primary)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+        >
+          <option value="">Tüm Diller</option>
+          {languages.map((lang) => (
+            <option key={lang} value={lang}>{lang}</option>
+          ))}
+        </select>
+
+        {/* Sort */}
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as SortBy)}
+          className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] px-3 py-1.5 text-xs text-[var(--color-text-primary)] focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+        >
+          <option value="updated">Son güncellenen</option>
+          <option value="name">Ada göre</option>
+          <option value="stars">Yıldıza göre</option>
+        </select>
+      </div>
+
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-[var(--color-text-muted)] animate-float">
@@ -178,7 +267,9 @@ export default function DashboardPage() {
           </svg>
           <h3 className="mb-1 text-lg font-semibold text-[var(--color-text-primary)]">Repo bulunamadı</h3>
           <p className="text-sm text-[var(--color-text-muted)]">
-            {search ? "Arama kriterlerinize uygun repo bulunamadı." : "GitHub hesabınızda repo bulunamadı."}
+            {search || filterLang || filterVisibility !== "all"
+              ? "Filtreleme kriterlerinize uygun repo bulunamadı."
+              : "GitHub hesabınızda repo bulunamadı."}
           </p>
         </div>
       ) : (

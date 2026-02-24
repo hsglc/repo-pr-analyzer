@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { Octokit } from "@octokit/rest";
 import { authOptions } from "@/lib/auth";
 import { findApiKeysByUserId } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
+import { GitHubPlatform } from "@/lib/core/platforms/github-platform";
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ owner: string; repo: string }> }
 ) {
   const session = await getServerSession(authOptions);
@@ -24,39 +24,17 @@ export async function GET(
 
   try {
     const token = decrypt(apiKeys.githubToken);
-    const octokit = new Octokit({ auth: token });
+    const platform = new GitHubPlatform(token, owner, repo);
 
-    // Read state query parameter
-    const url = new URL(request.url);
-    const stateParam = url.searchParams.get("state") || "open";
-    const state = (["open", "closed", "all"].includes(stateParam) ? stateParam : "open") as "open" | "closed" | "all";
+    const [branches, repoDetails] = await Promise.all([
+      platform.listBranches(),
+      platform.getRepoDetails(),
+    ]);
 
-    const { data: pulls } = await octokit.pulls.list({
-      owner,
-      repo,
-      state,
-      sort: "updated",
-      per_page: 50,
+    return NextResponse.json({
+      branches,
+      defaultBranch: repoDetails.defaultBranch,
     });
-
-    const mapped = pulls.map((pr) => ({
-      number: pr.number,
-      title: pr.title,
-      state: pr.state,
-      merged: pr.merged_at !== null,
-      author: {
-        login: pr.user?.login ?? "unknown",
-        avatarUrl: pr.user?.avatar_url ?? "",
-      },
-      labels: pr.labels.map((l) => ({
-        name: typeof l === "string" ? l : l.name ?? "",
-        color: typeof l === "string" ? "888888" : l.color ?? "888888",
-      })),
-      createdAt: pr.created_at,
-      updatedAt: pr.updated_at,
-    }));
-
-    return NextResponse.json(mapped);
   } catch (err: unknown) {
     const status = (err as { status?: number })?.status;
     if (status === 404) {
@@ -68,9 +46,9 @@ export async function GET(
         { status: 429 }
       );
     }
-    console.error("Pulls API error:", err);
+    console.error("Branches API error:", err);
     return NextResponse.json(
-      { error: "PR'lar yüklenirken hata oluştu" },
+      { error: "Branch'ler yüklenirken hata oluştu" },
       { status: 500 }
     );
   }
