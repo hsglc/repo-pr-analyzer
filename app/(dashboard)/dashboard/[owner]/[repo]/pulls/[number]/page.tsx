@@ -87,6 +87,7 @@ export default function AnalysisPage() {
 
   // Code review state
   const [codeReview, setCodeReview] = useState<CodeReviewItem[]>([]);
+  const [codeReviewCommitSha, setCodeReviewCommitSha] = useState<string>("");
   const [reviewing, setReviewing] = useState(false);
   const [postingReview, setPostingReview] = useState(false);
 
@@ -166,6 +167,7 @@ export default function AnalysisPage() {
 
       const data = await res.json();
       setCodeReview(data.codeReview || []);
+      setCodeReviewCommitSha(data.commitSha || statusInfo?.currentHeadSha || "");
       toast.success(`Kod inceleme tamamlandı: ${data.codeReview?.length || 0} bulgu`);
     } catch {
       toast.error("Kod inceleme sırasında beklenmeyen bir hata oluştu");
@@ -234,6 +236,7 @@ export default function AnalysisPage() {
         // Load code review from status if available
         if (status.lastCodeReview) {
           setCodeReview(status.lastCodeReview.codeReview);
+          setCodeReviewCommitSha(status.lastCodeReview.commitSha || "");
         }
 
         if (status.hasHistory && !status.needsReanalysis && status.lastAnalysis) {
@@ -430,6 +433,13 @@ export default function AnalysisPage() {
   const scenarioCount = report?.testScenarios?.length || 0;
   const findingCount = codeReview.length;
   const criticalFindings = codeReview.filter((r) => r.severity === "critical").length;
+
+  // Code review is up-to-date if review exists and was done on the current head sha
+  const codeReviewUpToDate =
+    codeReview.length > 0 &&
+    !!codeReviewCommitSha &&
+    !!statusInfo?.currentHeadSha &&
+    codeReviewCommitSha === statusInfo.currentHeadSha;
 
   const tabs: { key: TabType; label: string; icon: React.ReactNode; badge?: React.ReactNode }[] = [
     {
@@ -733,8 +743,9 @@ export default function AnalysisPage() {
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
               onClick={runCodeReview}
-              disabled={reviewing}
-              className="btn-glow flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 active:scale-95 transition-all"
+              disabled={reviewing || codeReviewUpToDate}
+              title={codeReviewUpToDate ? "Son commit ile guncel, yeni commit geldiginde tekrar inceleyebilirsiniz" : undefined}
+              className="btn-glow flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
               style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}
             >
               {reviewing ? (
@@ -744,6 +755,14 @@ export default function AnalysisPage() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                   </svg>
                   Kod İnceleniyor...
+                </>
+              ) : codeReviewUpToDate ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  Guncel
                 </>
               ) : (
                 <>
@@ -759,18 +778,34 @@ export default function AnalysisPage() {
             </button>
 
             {codeReview.length > 0 && (
-              <button
-                onClick={handlePostReviewToGitHub}
-                disabled={postingReview}
-                className="btn-glow flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 active:scale-95 transition-all"
-                style={{ background: "linear-gradient(135deg, #ea580c, #dc2626)" }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
-                  <path d="M9 18c-4.51 2-5-2-7-2"/>
-                </svg>
-                {postingReview ? "Gönderiliyor..." : "GitHub'a Review Gönder"}
-              </button>
+              <>
+                <button
+                  onClick={handlePostReviewToGitHub}
+                  disabled={postingReview}
+                  className="btn-glow flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 active:scale-95 transition-all"
+                  style={{ background: "linear-gradient(135deg, #ea580c, #dc2626)" }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
+                    <path d="M9 18c-4.51 2-5-2-7-2"/>
+                  </svg>
+                  {postingReview ? "Gönderiliyor..." : "GitHub'a Review Gönder"}
+                </button>
+
+                <a
+                  href={`https://github.com/${params.owner}/${params.repo}/pull/${prNumber}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/>
+                    <line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                  GitHub&apos;da Gor
+                </a>
+              </>
             )}
           </div>
         </>

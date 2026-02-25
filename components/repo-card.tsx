@@ -59,22 +59,24 @@ export function RepoCard({ repo }: { repo: Repo }) {
   return (
     <Link
       href={`/dashboard/${repo.owner}/${repo.name}`}
-      className="group relative block overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-[var(--color-accent)]/30"
+      className="group relative block overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] transition-all duration-250 hover:-translate-y-1 hover:shadow-lg hover:border-[var(--color-accent)]/30"
+      style={{ boxShadow: "var(--shadow-sm)" }}
     >
       {/* Language color bar at top */}
-      {langColor && (
+      {langColor ? (
         <div
-          className="h-1 w-full transition-all duration-200 group-hover:h-1.5"
+          className="h-0.5 w-full transition-all duration-300 group-hover:h-1"
           style={{ backgroundColor: langColor }}
         />
+      ) : (
+        <div className="h-0.5 w-full bg-[var(--color-bg-tertiary)]" />
       )}
-      {!langColor && <div className="h-1 w-full bg-[var(--color-bg-tertiary)]" />}
 
       <div className="p-4">
         {/* Header: name + badge */}
-        <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="mb-2.5 flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-sm font-semibold text-[var(--color-accent)] group-hover:text-[var(--color-accent-hover)] sm:text-base">
+            <h3 className="truncate text-sm font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors sm:text-base">
               {repo.name}
             </h3>
             <p className="truncate text-xs text-[var(--color-text-muted)]">{repo.owner}</p>
@@ -87,7 +89,7 @@ export function RepoCard({ repo }: { repo: Repo }) {
         </div>
 
         {/* Description */}
-        <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-[var(--color-text-secondary)] sm:text-sm">
+        <p className="mb-3.5 line-clamp-2 text-xs leading-relaxed text-[var(--color-text-secondary)] sm:text-sm">
           {repo.description || "Aciklama bulunmuyor"}
         </p>
 
@@ -96,7 +98,7 @@ export function RepoCard({ repo }: { repo: Repo }) {
           {repo.language && (
             <span className="flex items-center gap-1.5">
               <span
-                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/5"
                 style={{ backgroundColor: langColor }}
               />
               <span className="truncate">{repo.language}</span>

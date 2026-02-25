@@ -17,7 +17,7 @@ export function NavHeader() {
       <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
         <button
           onClick={toggle}
-          className="shrink-0 rounded-lg p-2 hover:bg-[var(--color-bg-tertiary)] md:hidden"
+          className="shrink-0 rounded-lg p-2 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors md:hidden"
           aria-label="Menu ac/kapat"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -32,7 +32,7 @@ export function NavHeader() {
           {breadcrumbs.map((crumb, i) => (
             <span key={crumb.href} className="flex min-w-0 items-center gap-1 sm:gap-1.5">
               {i > 0 && (
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[var(--color-text-muted)]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[var(--color-text-muted)]/50">
                   <polyline points="9 18 15 12 9 6"/>
                 </svg>
               )}
@@ -54,7 +54,7 @@ export function NavHeader() {
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <button
           onClick={() => signOut(auth).then(() => window.location.href = "/login")}
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors sm:px-3"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-danger-light)] hover:text-[var(--color-danger)] transition-colors sm:px-3"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
