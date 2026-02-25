@@ -87,6 +87,7 @@ export default function AnalysisPage() {
 
   // Code review state
   const [codeReview, setCodeReview] = useState<CodeReviewItem[]>([]);
+  const [codeReviewCommitSha, setCodeReviewCommitSha] = useState<string>("");
   const [reviewing, setReviewing] = useState(false);
   const [postingReview, setPostingReview] = useState(false);
 
@@ -166,6 +167,7 @@ export default function AnalysisPage() {
 
       const data = await res.json();
       setCodeReview(data.codeReview || []);
+      setCodeReviewCommitSha(data.commitSha || statusInfo?.currentHeadSha || "");
       toast.success(`Kod inceleme tamamlandı: ${data.codeReview?.length || 0} bulgu`);
     } catch {
       toast.error("Kod inceleme sırasında beklenmeyen bir hata oluştu");
@@ -234,6 +236,7 @@ export default function AnalysisPage() {
         // Load code review from status if available
         if (status.lastCodeReview) {
           setCodeReview(status.lastCodeReview.codeReview);
+          setCodeReviewCommitSha(status.lastCodeReview.commitSha || "");
         }
 
         if (status.hasHistory && !status.needsReanalysis && status.lastAnalysis) {
@@ -430,6 +433,13 @@ export default function AnalysisPage() {
   const scenarioCount = report?.testScenarios?.length || 0;
   const findingCount = codeReview.length;
   const criticalFindings = codeReview.filter((r) => r.severity === "critical").length;
+
+  // Code review is up-to-date if review exists and was done on the current head sha
+  const codeReviewUpToDate =
+    codeReview.length > 0 &&
+    !!codeReviewCommitSha &&
+    !!statusInfo?.currentHeadSha &&
+    codeReviewCommitSha === statusInfo.currentHeadSha;
 
   const tabs: { key: TabType; label: string; icon: React.ReactNode; badge?: React.ReactNode }[] = [
     {
@@ -733,8 +743,9 @@ export default function AnalysisPage() {
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
               onClick={runCodeReview}
-              disabled={reviewing}
-              className="btn-glow flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 active:scale-95 transition-all"
+              disabled={reviewing || codeReviewUpToDate}
+              title={codeReviewUpToDate ? "Son commit ile guncel, yeni commit geldiginde tekrar inceleyebilirsiniz" : undefined}
+              className="btn-glow flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
               style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}
             >
               {reviewing ? (
@@ -744,6 +755,14 @@ export default function AnalysisPage() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                   </svg>
                   Kod İnceleniyor...
+                </>
+              ) : codeReviewUpToDate ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  Guncel
                 </>
               ) : (
                 <>
