@@ -13,7 +13,7 @@ export default function DashboardLayout({
         <Sidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
           <NavHeader />
-          <main className="flex-1 overflow-auto p-6" style={{ backgroundColor: "var(--color-bg-secondary)" }}>
+          <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6" style={{ backgroundColor: "var(--color-bg-secondary)" }}>
             {children}
           </main>
         </div>

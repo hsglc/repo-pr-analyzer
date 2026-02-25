@@ -19,7 +19,7 @@ export function AnalysisResult({
   return (
     <div className="space-y-6 animate-slide-up">
       <div className="rounded-lg bg-[var(--color-bg-primary)] p-4 shadow-sm">
-        <h3 className="text-lg font-bold text-[var(--color-text-primary)]">
+        <h3 className="text-lg font-bold text-[var(--color-text-primary)] break-words">
           {report.prTitle}{" "}
           <span className="text-[var(--color-text-muted)]">#{report.prNumber}</span>
         </h3>

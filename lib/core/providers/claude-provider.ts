@@ -2,7 +2,12 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import type { AIProvider } from "./ai-provider";
 import type { CodeReviewItem, ImpactResult, TestScenario } from "../types";
-import { buildTestGenerationPrompt, buildCodeReviewPrompt } from "../generators/prompts";
+import {
+  buildTestGenerationSystemPrompt,
+  buildTestGenerationUserMessage,
+  buildCodeReviewSystemPrompt,
+  buildCodeReviewUserMessage,
+} from "../generators/prompts";
 
 const TestScenarioSchema = z.object({
   id: z.string(),
@@ -77,12 +82,18 @@ export class ClaudeProvider implements AIProvider {
     return json;
   }
 
-  private async callClaudeOnce(prompt: string): Promise<string> {
+  private async callClaudeOnce(systemPrompt: string, userMessage: string): Promise<string> {
     const response = await this.client.messages.create({
       model: this.model,
-      max_tokens: 16384,
-      system: "Sen bir yazılım analiz asistanısın. Yanıtını SADECE geçerli JSON olarak ver. Markdown code block, açıklama veya ek metin ekleme — yalnızca JSON objesi döndür.",
-      messages: [{ role: "user", content: prompt }],
+      max_tokens: 8192,
+      system: [
+        {
+          type: "text",
+          text: systemPrompt,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages: [{ role: "user", content: userMessage }],
     });
 
     const textBlock = response.content.find((block) => block.type === "text");
@@ -98,7 +109,7 @@ export class ClaudeProvider implements AIProvider {
     return this.extractJSON(textBlock.text);
   }
 
-  private async callClaude(prompt: string): Promise<string> {
+  private async callClaude(systemPrompt: string, userMessage: string): Promise<string> {
     const APP_RETRY_DELAYS = [0, 10_000, 20_000];
     let lastError: unknown;
 
@@ -108,7 +119,7 @@ export class ClaudeProvider implements AIProvider {
         await new Promise((r) => setTimeout(r, APP_RETRY_DELAYS[i]));
       }
       try {
-        return await this.callClaudeOnce(prompt);
+        return await this.callClaudeOnce(systemPrompt, userMessage);
       } catch (err) {
         lastError = err;
         const isOverloaded = err instanceof Anthropic.APIError && (err.status === 529 || err.status === 503);
@@ -136,8 +147,9 @@ export class ClaudeProvider implements AIProvider {
     diffSummary: string,
     maxScenarios: number
   ): Promise<TestScenario[]> {
-    const prompt = buildTestGenerationPrompt(impact, diffSummary, maxScenarios);
-    const jsonStr = await this.callClaude(prompt);
+    const systemPrompt = buildTestGenerationSystemPrompt();
+    const userMessage = buildTestGenerationUserMessage(impact, diffSummary, maxScenarios);
+    const jsonStr = await this.callClaude(systemPrompt, userMessage);
     const parsed = TestResponseSchema.parse(this.parseJSON(jsonStr));
     return parsed.scenarios;
   }
@@ -147,8 +159,9 @@ export class ClaudeProvider implements AIProvider {
     diffContent: string,
     maxItems: number
   ): Promise<CodeReviewItem[]> {
-    const prompt = buildCodeReviewPrompt(impact, diffContent, maxItems);
-    const jsonStr = await this.callClaude(prompt);
+    const systemPrompt = buildCodeReviewSystemPrompt(diffContent);
+    const userMessage = buildCodeReviewUserMessage(impact, diffContent, maxItems);
+    const jsonStr = await this.callClaude(systemPrompt, userMessage);
     const parsed = CodeReviewResponseSchema.parse(this.parseJSON(jsonStr));
     return parsed.items;
   }

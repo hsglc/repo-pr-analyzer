@@ -49,7 +49,7 @@ export function ModelSelector({ onModelChange }: ModelSelectorProps) {
 
   if (loading) {
     return (
-      <div className="animate-shimmer h-9 w-48 rounded-lg" />
+      <div className="animate-shimmer h-9 w-32 rounded-lg sm:w-48" />
     );
   }
 

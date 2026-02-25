@@ -2,7 +2,12 @@ import OpenAI from "openai";
 import { z } from "zod";
 import type { AIProvider } from "./ai-provider";
 import type { CodeReviewItem, ImpactResult, TestScenario } from "../types";
-import { buildTestGenerationPrompt, buildCodeReviewPrompt } from "../generators/prompts";
+import {
+  buildTestGenerationSystemPrompt,
+  buildTestGenerationUserMessage,
+  buildCodeReviewSystemPrompt,
+  buildCodeReviewUserMessage,
+} from "../generators/prompts";
 
 const TestScenarioSchema = z.object({
   id: z.string(),
@@ -89,11 +94,9 @@ export class OpenAIProvider implements AIProvider {
     diffSummary: string,
     maxScenarios: number
   ): Promise<TestScenario[]> {
-    const prompt = buildTestGenerationPrompt(impact, diffSummary, maxScenarios);
-    const content = await this.callOpenAI(
-      "Sen bir QA mühendisisin. Yanıtı her zaman JSON formatında ver.",
-      prompt
-    );
+    const systemPrompt = buildTestGenerationSystemPrompt();
+    const userMessage = buildTestGenerationUserMessage(impact, diffSummary, maxScenarios);
+    const content = await this.callOpenAI(systemPrompt, userMessage);
     const parsed = TestResponseSchema.parse(JSON.parse(content));
     return parsed.scenarios;
   }
@@ -103,11 +106,9 @@ export class OpenAIProvider implements AIProvider {
     diffContent: string,
     maxItems: number
   ): Promise<CodeReviewItem[]> {
-    const prompt = buildCodeReviewPrompt(impact, diffContent, maxItems);
-    const content = await this.callOpenAI(
-      "Sen deneyimli bir yazılım mühendisisin. Yanıtı her zaman JSON formatında ver.",
-      prompt
-    );
+    const systemPrompt = buildCodeReviewSystemPrompt(diffContent);
+    const userMessage = buildCodeReviewUserMessage(impact, diffContent, maxItems);
+    const content = await this.callOpenAI(systemPrompt, userMessage);
     const parsed = CodeReviewResponseSchema.parse(JSON.parse(content));
     return parsed.items;
   }

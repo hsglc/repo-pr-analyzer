@@ -84,7 +84,7 @@ export function PRListItem({
   const riskColor = analysisSummary ? RISK_COLORS[analysisSummary.riskLevel] : undefined;
 
   return (
-    <div className="gradient-border flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
+    <div className="gradient-border flex items-stretch rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
       {/* Left risk color bar */}
       {riskColor && (
         <div
@@ -93,11 +93,11 @@ export function PRListItem({
         />
       )}
 
-      <div className="flex flex-1 items-center justify-between p-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
+      <div className="flex flex-1 flex-col p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium text-[var(--color-text-muted)]">#{pr.number}</span>
-            <h3 className="font-semibold text-[var(--color-text-primary)]">{pr.title}</h3>
+            <h3 className="font-semibold text-[var(--color-text-primary)] break-words">{pr.title}</h3>
             <StateBadge state={pr.state} merged={pr.merged} />
           </div>
 
@@ -146,7 +146,7 @@ export function PRListItem({
           )}
         </div>
 
-        <div className="ml-4 flex items-center gap-2">
+        <div className="mt-3 flex items-center gap-2 sm:mt-0 sm:ml-4 sm:shrink-0">
           <Link
             href={`/dashboard/${owner}/${repo}/pulls/${pr.number}`}
             className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"

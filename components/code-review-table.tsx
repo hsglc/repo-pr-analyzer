@@ -70,14 +70,14 @@ export function CodeReviewTable({ items }: { items: CodeReviewItem[] }) {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-lg font-bold text-[var(--color-text-primary)]">
           Kod İnceleme Bulguları
           <span className="ml-2 text-sm font-normal text-[var(--color-text-muted)]">
             ({sorted.length}{filtered.length !== items.length ? `/${items.length}` : ""})
           </span>
         </h3>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <select
             value={filterSeverity}
             onChange={(e) => setFilterSeverity(e.target.value as FilterSeverity)}
@@ -197,7 +197,7 @@ function ReviewItemCard({
           >
             <div className="border-t border-[var(--color-border)] p-4">
               <div className="mb-3">
-                <code className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-secondary)]">
+                <code className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-secondary)] break-all">
                   {location}
                 </code>
               </div>

@@ -477,11 +477,11 @@ export default function RepoDetailPage() {
               )}
 
               {/* Action buttons */}
-              <div className="mb-6 flex gap-3">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row">
                 <button
                   onClick={handleBranchAnalysis}
                   disabled={branchAnalyzing || branchReviewing || !headBranch || !baseBranch || headBranch === baseBranch}
-                  className="btn-glow flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 active:scale-95 transition-all"
+                  className="btn-glow flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 active:scale-95 transition-all"
                   style={{ background: "var(--gradient-primary)" }}
                 >
                   {branchAnalyzing ? (
@@ -505,7 +505,7 @@ export default function RepoDetailPage() {
                 <button
                   onClick={handleBranchCodeReview}
                   disabled={branchAnalyzing || branchReviewing || !headBranch || !baseBranch || headBranch === baseBranch}
-                  className="btn-glow flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 active:scale-95 transition-all"
+                  className="btn-glow flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 active:scale-95 transition-all"
                   style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}
                 >
                   {branchReviewing ? (

@@ -228,6 +228,12 @@ body {
   animation: float 6s ease-in-out infinite;
 }
 
+@media (max-width: 640px) {
+  .auth-orb {
+    opacity: 0.15;
+  }
+}
+
 /* ─── Landing Page Animations ─── */
 
 @keyframes gradient-text {

@@ -1,189 +1,235 @@
-# PR Impact Analyzer
+<div align="center">
 
-PR acildiginda degisikliklerin hangi feature, sayfa ve servisleri etkiledigini otomatik analiz eden, AI destekli test senaryolari olusturan ve detayli raporu PR'a comment olarak yazan otomasyon araci.
+# PR Impact Analyzer (PIA)
 
-## Nasil Calisir?
+**AI destekli pull request etki analizi, otomatik test senaryosu ve kod inceleme platformu.**
+
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Firebase](https://img.shields.io/badge/Firebase-Auth_&_RTDB-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/)
+
+</div>
+
+---
+
+## Genel Bakış
+
+PR Impact Analyzer, bir pull request açıldığında veya güncellendiğinde değişikliklerin hangi özellik, sayfa ve servisleri etkilediğini otomatik olarak analiz eden bir platformdur. AI destekli test senaryoları oluşturur, kod incelemesi yapar ve detaylı raporu doğrudan PR'a yorum olarak yazar.
+
+### Temel Özellikler
+
+- **Etki Analizi** — Değişikliklerin hangi özellikleri, servisleri ve sayfaları etkilediğini tespit eder
+- **AI Test Senaryoları** — Claude veya OpenAI ile bağlama özel test senaryoları üretir
+- **Kod İnceleme** — Güvenlik açıkları, performans sorunları ve kod kalitesi bulgularını otomatik tespit eder
+- **Branch Karşılaştırma** — İki branch arasındaki farkları analiz eder, merge öncesi potansiyel sorunları belirler
+- **PR Yorum Entegrasyonu** — Analiz sonuçlarını doğrudan GitHub PR'ına yorum olarak yazar
+- **Çoklu AI Desteği** — Claude (Anthropic) ve OpenAI model aileleri arasında seçim yapabilme
+
+---
+
+## Nasıl Çalışır?
 
 ```
-PR Acilir / Guncellenir
-        |
-        v
+PR Açılır / Güncellenir
+        │
+        ▼
   CI/CD Pipeline tetiklenir
   (GitHub Actions veya Azure Pipelines)
-        |
-        v
-  Diff Parser -- PR diff'ini parse eder
-        |
-        v
-  Impact Analyzer -- impact-map.config.json
-        |               ile dosya -> feature esler
-        v
-  AI Test Generator -- Claude/OpenAI ile
-        |               test senaryolari uretir
-        v
-  Report Generator -- Markdown rapor olusturur
-        |
-        v
-  PR'a comment olarak yazar
-  (varsa mevcut comment'i gunceller)
+        │
+        ▼
+  Diff Parser ── PR diff'ini parse eder
+        │
+        ▼
+  Impact Analyzer ── impact-map.config.json
+        │               ile dosya → özellik eşler
+        ▼
+  AI Test Generator ── Claude/OpenAI ile
+        │               test senaryoları üretir
+        ▼
+  Report Generator ── Markdown rapor oluşturur
+        │
+        ▼
+  PR'a yorum olarak yazar
+  (varsa mevcut yorumu günceller)
 ```
 
-## Hizli Baslangic
+---
 
-### 1. branch-analyzer klasorunu projenize kopyalayin
+## Hızlı Başlangıç
 
-Bu klasoru mevcut projenizin root dizinine kopyalayin:
-
-```bash
-cp -r branch-analyzer/ /path/to/your-project/branch-analyzer/
-```
-
-### 2. Bagimliliklari yukleyin ve build edin
+### 1. Depoyu klonlayın ve bağımlılıkları yükleyin
 
 ```bash
-cd branch-analyzer
+git clone https://github.com/hsglc/repo-pr-analyzer.git
+cd repo-pr-analyzer/branch-analyzer
 npm install
-npm run build
 ```
 
-### 3. impact-map.config.json dosyasini projenize gore duzenleyin
+### 2. Ortam değişkenlerini yapılandırın
 
-Bu dosya degisikliklerin hangi feature'lari etkiledigini belirlemek icin kullanilir. Kendi proje yapisiniza gore guncelleyin:
+Proje kök dizininde `.env.local` dosyası oluşturun:
+
+```env
+# Firebase
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+FIREBASE_DATABASE_URL=...
+
+# Şifreleme
+ENCRYPTION_KEY=...
+```
+
+### 3. Geliştirme sunucusunu başlatın
+
+```bash
+npm run dev
+```
+
+Uygulama varsayılan olarak `http://localhost:3000` adresinde çalışır.
+
+### 4. `impact-map.config.json` dosyasını projenize göre düzenleyin
+
+Bu dosya değişikliklerin hangi özellikleri etkilediğini belirlemek için kullanılır. Kendi proje yapınıza göre güncelleyin:
 
 ```json
 {
   "features": {
-    "Feature Adi": {
-      "description": "Bu feature ne yapar",
-      "paths": ["src/bu-feature-ile-ilgili/**"],
-      "relatedFeatures": ["Iliskili Baska Feature"]
+    "Özellik Adı": {
+      "description": "Bu özellik ne yapar",
+      "paths": ["src/bu-ozellik-ile-ilgili/**"],
+      "relatedFeatures": ["İlişkili Başka Özellik"]
     }
   },
   "services": {
-    "Servis Adi": ["src/bu-servise-ait-dosyalar/**"]
+    "Servis Adı": ["src/bu-servise-ait-dosyalar/**"]
   },
   "pages": {
-    "Sayfa Adi": ["src/pages/bu-sayfa/**"]
+    "Sayfa Adı": ["src/pages/bu-sayfa/**"]
   },
   "ignorePatterns": ["**/*.test.ts", "**/node_modules/**"]
 }
 ```
 
-**features.paths**: Glob pattern'leri ile dosya -> feature eslemesi yapar.
-**relatedFeatures**: Bir feature degistiginde dolayli etkilenen feature'lari belirtir.
-**ignorePatterns**: Analiz disinda birakilacak dosyalar (testler, lock dosyalari vb.).
-
-### 4. CI/CD entegrasyonu secin
+| Alan | Açıklama |
+|------|----------|
+| `features.paths` | Glob kalıpları ile dosya → özellik eşlemesi yapar |
+| `relatedFeatures` | Bir özellik değiştiğinde dolaylı etkilenen özellikleri belirtir |
+| `ignorePatterns` | Analiz dışında bırakılacak dosyalar (testler, lock dosyaları vb.) |
 
 ---
 
-## GitHub Actions Entegrasyonu
+## CI/CD Entegrasyonu
 
-### Workflow dosyasini kopyalayin
+### GitHub Actions
 
-`branch-analyzer/.github/workflows/pr-impact-analysis.yml` dosyasi hazir olarak geliyor. Projenizin root'undaki `.github/workflows/` klasorune kopyalayin:
+#### Workflow dosyasını kopyalayın
+
+`branch-analyzer/.github/workflows/pr-impact-analysis.yml` dosyası hazır olarak gelir. Projenizin kök dizinindeki `.github/workflows/` klasörüne kopyalayın:
 
 ```bash
 cp branch-analyzer/.github/workflows/pr-impact-analysis.yml .github/workflows/
 ```
 
-Eger branch-analyzer projenizin root'unda degilse, workflow icindeki `working-directory` degerlerini guncelleyin.
+> Branch-analyzer projenizin kök dizininde değilse, workflow içindeki `working-directory` değerlerini güncelleyin.
 
-### Secret ekleyin
+#### Secret ekleyin
 
-Repository > **Settings** > **Secrets and variables** > **Actions** > **New repository secret**:
+**Repository** > **Settings** > **Secrets and variables** > **Actions** > **New repository secret**:
 
-| Secret | Deger |
+| Secret | Değer |
 |--------|-------|
-| `ANTHROPIC_API_KEY` | Claude API anahtariniz ([console.anthropic.com](https://console.anthropic.com)) |
+| `ANTHROPIC_API_KEY` | Claude API anahtarınız ([console.anthropic.com](https://console.anthropic.com)) |
 
-> `GITHUB_TOKEN` GitHub Actions tarafindan otomatik saglanir, eklemenize gerek yok.
+> `GITHUB_TOKEN` GitHub Actions tarafından otomatik sağlanır, eklemenize gerek yok.
 
-OpenAI kullanmak istiyorsaniz workflow'daki `AI_PROVIDER`'i `openai` yapin ve `OPENAI_API_KEY` secret'i ekleyin.
+OpenAI kullanmak istiyorsanız workflow'daki `AI_PROVIDER` değerini `openai` yapın ve `OPENAI_API_KEY` secret'ı ekleyin.
 
-### Test edin
+#### Test edin
 
-Bir PR acin veya mevcut PR'a push yapin. Actions sekmesinde workflow'un calistigini goreceksiniz. Tamamlaninca PR'da analiz raporu comment olarak gorunur.
+Bir PR açın veya mevcut PR'a push yapın. **Actions** sekmesinde workflow'un çalıştığını göreceksiniz. Tamamlanınca PR'da analiz raporu yorum olarak görünür.
 
 ---
 
-## Azure DevOps Entegrasyonu
+### Azure DevOps
 
-### Pipeline olusturun
+#### Pipeline oluşturun
 
-1. Azure DevOps projenizde **Pipelines** > **New Pipeline** > **Existing YAML file** secin
-2. Path olarak `branch-analyzer/azure-pipelines/pr-impact-analysis.yml` secin
+1. Azure DevOps projenizde **Pipelines** > **New Pipeline** > **Existing YAML file** seçin
+2. Path olarak `branch-analyzer/azure-pipelines/pr-impact-analysis.yml` seçin
 
-### Variable ekleyin
+#### Variable ekleyin
 
-Pipeline **Edit** > **Variables** > **New variable**:
+**Pipeline Edit** > **Variables** > **New variable**:
 
-| Variable | Deger | Secret |
+| Değişken | Değer | Secret |
 |----------|-------|--------|
-| `ANTHROPIC_API_KEY` | Claude API anahtariniz | Evet (Keep this value secret) |
+| `ANTHROPIC_API_KEY` | Claude API anahtarınız | Evet *(Keep this value secret)* |
 
-> `System.AccessToken` Azure tarafindan otomatik saglanir.
+> `System.AccessToken` Azure tarafından otomatik sağlanır.
 
-### Build Service iznini verin
+#### Build Service iznini verin
 
-Project Settings > **Repositories** > **Security** > `{Project Name} Build Service`:
-- **Contribute to pull requests** = Allow
+**Project Settings** > **Repositories** > **Security** > `{Project Name} Build Service`:
+- **Contribute to pull requests** → *Allow*
 
-### PR trigger
+#### PR tetikleyici
 
-Pipeline otomatik olarak `main`, `develop` ve `release/*` branch'lerine acilan PR'larda calisir. Baska branch'ler eklemek icin `azure-pipelines/pr-impact-analysis.yml` icindeki `pr.branches.include` listesini guncelleyin.
+Pipeline otomatik olarak `main`, `develop` ve `release/*` branch'lerine açılan PR'larda çalışır. Başka branch'ler eklemek için `azure-pipelines/pr-impact-analysis.yml` dosyasındaki `pr.branches.include` listesini güncelleyin.
 
 ---
 
-## Konfigursayon
+## Yapılandırma
 
-### Environment Variables
+### Ortam Değişkenleri
 
-| Variable | Zorunlu | Varsayilan | Aciklama |
+| Değişken | Zorunlu | Varsayılan | Açıklama |
 |----------|---------|------------|----------|
-| `AI_PROVIDER` | - | `claude` | `claude` veya `openai` |
-| `ANTHROPIC_API_KEY` | * | - | Claude API anahtari |
-| `OPENAI_API_KEY` | * | - | OpenAI API anahtari |
-| `PLATFORM` | - | `github` | `github` veya `azure` |
-| `GITHUB_TOKEN` | ** | - | GitHub API token |
-| `AZURE_TOKEN` | ** | - | Azure DevOps token |
-| `AZURE_ORG_URL` | ** | - | Azure DevOps org URL |
-| `PR_NUMBER` | Evet | - | PR numarasi |
-| `REPO_OWNER` | Evet | - | Repository sahibi |
-| `REPO_NAME` | Evet | - | Repository adi |
-| `MAX_TEST_SCENARIOS` | - | `15` | Maks test senaryosu sayisi |
-| `RISK_THRESHOLD` | - | `medium` | Minimum risk esigi |
-| `REPORT_LANGUAGE` | - | `tr` | Rapor dili |
+| `AI_PROVIDER` | — | `claude` | `claude` veya `openai` |
+| `ANTHROPIC_API_KEY` | \* | — | Claude API anahtarı |
+| `OPENAI_API_KEY` | \* | — | OpenAI API anahtarı |
+| `PLATFORM` | — | `github` | `github` veya `azure` |
+| `GITHUB_TOKEN` | \*\* | — | GitHub API token |
+| `AZURE_TOKEN` | \*\* | — | Azure DevOps token |
+| `AZURE_ORG_URL` | \*\* | — | Azure DevOps organizasyon URL'i |
+| `PR_NUMBER` | Evet | — | PR numarası |
+| `REPO_OWNER` | Evet | — | Depo sahibi |
+| `REPO_NAME` | Evet | — | Depo adı |
+| `MAX_TEST_SCENARIOS` | — | `15` | Maksimum test senaryosu sayısı |
+| `RISK_THRESHOLD` | — | `medium` | Minimum risk eşiği |
+| `REPORT_LANGUAGE` | — | `tr` | Rapor dili |
 
-\* Secilen AI provider'a gore biri zorunlu.
-\** Secilen platforma gore biri zorunlu. CI/CD ortamlarinda otomatik saglanir.
+> \* Seçilen AI sağlayıcısına göre biri zorunlu.
+> \*\* Seçilen platforma göre biri zorunlu. CI/CD ortamlarında otomatik sağlanır.
 
 ### Risk Hesaplama
 
-| Kosul | Seviye |
+| Koşul | Seviye |
 |-------|--------|
-| >500 satir degisiklik veya >5 feature | Critical |
-| >200 satir veya >3 feature | High |
-| >50 satir veya >1 feature | Medium |
-| Diger | Low |
+| >500 satır değişiklik veya >5 özellik | Critical |
+| >200 satır veya >3 özellik | High |
+| >50 satır veya >1 özellik | Medium |
+| Diğer | Low |
 
 ---
 
-## Comment Guncelleme (Idempotency)
+## Yorum Güncelleme (Idempotency)
 
-PR'a her push yapildiginda pipeline tekrar calisir. Ayni PR'da birden fazla comment olusmasini onlemek icin **marker-based idempotency** kullanilir:
+PR'a her push yapıldığında pipeline tekrar çalışır. Aynı PR'da birden fazla yorum oluşmasını önlemek için **marker tabanlı idempotency** kullanılır:
 
-- Rapor `<!-- pr-impact-analyzer -->` HTML comment marker'i icerir
-- Yeni analiz calistiginda mevcut commentler arasinda marker aranir
-- Bulunursa mevcut comment guncellenir, bulunamazsa yeni comment olusturulur
+1. Rapor `<!-- pr-impact-analyzer -->` HTML yorum işaretçisi içerir
+2. Yeni analiz çalıştığında mevcut yorumlar arasında işaretçi aranır
+3. Bulunursa mevcut yorum güncellenir, bulunamazsa yeni yorum oluşturulur
 
-Bu sayede PR'da her zaman tek ve guncel bir analiz raporu bulunur.
+Bu sayede PR'da her zaman tek ve güncel bir analiz raporu bulunur.
 
 ---
 
-## Lokal Calistirma
+## Lokal Çalıştırma (CI/CD olmadan)
 
-Entegrasyon olmadan test etmek icin:
+Entegrasyon olmadan test etmek için:
 
 ```bash
 cd branch-analyzer
@@ -201,84 +247,104 @@ npm run dev
 
 ---
 
-## Ornek PR Comment Ciktisi
+## Örnek PR Yorum Çıktısı
 
-Asagida aracin PR'a yazdigi ornek bir rapor:
-
----
+Aşağıda aracın PR'a yazdığı örnek bir rapor:
 
 > **PR Etki Analizi Raporu**
-> Otomatik analiz - 23.02.2026 14:30:00
+> Otomatik analiz — 23.02.2026 14:30:00
 
-**Ozet:** Bu PR **3** feature'i dogrudan etkiliyor ve **2** feature'i dolayli olarak etkileyebilir. Risk seviyesi: **HIGH**.
+**Özet:** Bu PR **3** özelliği doğrudan etkiliyor ve **2** özelliği dolaylı olarak etkileyebilir. Risk seviyesi: **HIGH**.
 
-| Metrik | Deger |
+| Metrik | Değer |
 |--------|-------|
-| Degisen dosya | 12 |
-| Eklenen satir | +245 |
-| Silinen satir | -89 |
-| Etkilenen feature | 5 |
+| Değişen dosya | 12 |
+| Eklenen satır | +245 |
+| Silinen satır | -89 |
+| Etkilenen özellik | 5 |
 | Risk seviyesi | HIGH |
 
-**Dogrudan Etkiler:**
-- Odeme Sistemi (3 dosya)
-- Kullanici Girisi (2 dosya)
-- Oturum Yonetimi (1 dosya)
+**Doğrudan Etkiler:**
+- Ödeme Sistemi (3 dosya)
+- Kullanıcı Girişi (2 dosya)
+- Oturum Yönetimi (1 dosya)
 
-**Dolayli Etkiler:**
+**Dolaylı Etkiler:**
 - Bildirimler
-- Kullanici Profili
+- Kullanıcı Profili
 
-**Test Senaryolari (10 adet):**
+**Test Senaryoları (10 adet):**
 
-| ID | Senaryo | Oncelik | Tip |
+| ID | Senaryo | Öncelik | Tip |
 |-----|---------|---------|-----|
-| TC-001 | Kredi karti ile basarili odeme | critical | functional |
-| TC-002 | Gecersiz kart ile odeme reddi | critical | functional |
-| TC-003 | Odeme sirasinda oturum suresi dolma | high | integration |
-| TC-007 | Esanlik odeme istegi (double submit) | high | edge-case |
+| TC-001 | Kredi kartı ile başarılı ödeme | critical | functional |
+| TC-002 | Geçersiz kart ile ödeme reddi | critical | functional |
+| TC-003 | Ödeme sırasında oturum süresi dolma | high | integration |
+| TC-007 | Eşzamanlı ödeme isteği (double submit) | high | edge-case |
 | ... | ... | ... | ... |
 
-Her senaryo detaylari: adimlar + beklenen sonuc.
+Her senaryo detayları: adımlar + beklenen sonuç.
 
 ---
 
-## Proje Yapisi
+## Proje Yapısı
 
 ```
 branch-analyzer/
-├── src/
-│   ├── index.ts              # Ana orkestrator
-│   ├── types.ts              # TypeScript tipleri
-│   ├── config.ts             # Konfigurasyon (Zod ile)
-│   ├── parsers/
-│   │   └── diff-parser.ts    # parse-diff ile diff parse
-│   ├── analyzers/
-│   │   └── impact-analyzer.ts # Dosya -> feature eslemesi
-│   ├── generators/
-│   │   ├── test-generator.ts  # AI test senaryosu orchestrator
-│   │   ├── prompts.ts         # AI prompt sablonlari
-│   │   └── report-generator.ts # Markdown rapor
-│   ├── providers/
-│   │   ├── ai-provider.ts     # AI provider interface
-│   │   ├── claude-provider.ts # Claude API
-│   │   └── openai-provider.ts # OpenAI API
-│   └── platforms/
-│       ├── platform.ts        # Platform interface
-│       ├── github-platform.ts # GitHub API (Octokit)
-│       └── azure-platform.ts  # Azure DevOps API
+├── app/                          # Next.js App Router sayfaları
+│   ├── page.tsx                  # Landing page
+│   ├── globals.css               # Global stiller
+│   ├── (auth)/                   # Kimlik doğrulama sayfaları
+│   │   ├── layout.tsx
+│   │   ├── login/
+│   │   └── register/
+│   ├── (dashboard)/              # Dashboard sayfaları
+│   │   ├── layout.tsx
+│   │   └── dashboard/
+│   │       ├── page.tsx          # Repo listesi
+│   │       └── [owner]/[repo]/   # Repo detayı & PR analizi
+│   └── api/                      # API route'ları
+│       ├── analyze/              # Analiz endpoint'leri
+│       ├── repos/                # GitHub repo endpoint'leri
+│       └── settings/             # Kullanıcı ayarları
+├── components/                   # React bileşenleri
+│   ├── pr-list-item.tsx
+│   ├── impact-summary.tsx
+│   ├── diff-viewer.tsx
+│   ├── commit-history.tsx
+│   ├── code-review-table.tsx
+│   ├── test-scenarios-table.tsx
+│   └── model-selector.tsx
+├── lib/
+│   ├── core/                     # İş mantığı
+│   │   ├── types.ts              # TypeScript tipleri
+│   │   ├── config.ts             # Yapılandırma (Zod ile)
+│   │   └── providers/            # AI sağlayıcıları
+│   ├── api-client.ts             # İstemci taraflı API yardımcısı
+│   └── firebase.ts               # Firebase yapılandırması
 ├── .github/workflows/
-│   └── pr-impact-analysis.yml # GitHub Actions workflow
+│   └── pr-impact-analysis.yml    # GitHub Actions workflow
 ├── azure-pipelines/
-│   └── pr-impact-analysis.yml # Azure DevOps pipeline
-├── impact-map.config.json     # Dosya-feature esleme config'i
+│   └── pr-impact-analysis.yml    # Azure DevOps pipeline
+├── impact-map.config.json        # Dosya → özellik eşleme yapılandırması
 ├── package.json
 └── tsconfig.json
 ```
 
+---
+
 ## Mimari Kararlar
 
-- **Strategy Pattern**: AI provider ve platform degistirilebilir (interface-based). Claude'dan OpenAI'a gecis tek env variable.
-- **Config-driven Impact Mapping**: Dosya -> feature eslemesi `impact-map.config.json` ile kullanici tarafindan tanimlanir. AST analizi gibi magic yok, deterministik ve anlasilir.
-- **Zod Validation**: AI yanitlari sema ile dogrulanir. Beklenmedik format hataya donusur.
-- **Marker-based Idempotency**: PR'da tekrarlayan comment yerine tek comment guncellenir.
+| Karar | Gerekçe |
+|-------|---------|
+| **Strategy Pattern** | AI sağlayıcısı ve platform değiştirilebilir (arayüz tabanlı). Claude'dan OpenAI'a geçiş tek ortam değişkeni ile yapılır. |
+| **Config-driven Impact Mapping** | Dosya → özellik eşlemesi `impact-map.config.json` ile kullanıcı tarafından tanımlanır. AST analizi gibi sihirli yaklaşımlar yerine deterministik ve anlaşılır bir yapı tercih edilmiştir. |
+| **Zod Doğrulama** | AI yanıtları şema ile doğrulanır. Beklenmeyen format hataya dönüşür, sessizce geçilmez. |
+| **Marker Tabanlı Idempotency** | PR'da tekrarlayan yorum yerine tek yorum güncellenir, temiz bir geçmiş sağlanır. |
+| **Firebase Auth + RTDB** | Sunucusuz kimlik doğrulama ve gerçek zamanlı veritabanı ile altyapı yönetim yükü minimumda tutulur. |
+
+---
+
+## Lisans
+
+Bu proje MIT lisansı ile lisanslanmıştır.
