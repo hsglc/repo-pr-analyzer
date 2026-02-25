@@ -168,12 +168,13 @@ export default function AnalysisPage() {
       const data = await res.json();
       setCodeReview(data.codeReview || []);
       setCodeReviewCommitSha(data.commitSha || statusInfo?.currentHeadSha || "");
+      if (!report) setActiveTab("code-review");
       toast.success(`Kod inceleme tamamlandı: ${data.codeReview?.length || 0} bulgu`);
     } catch {
       toast.error("Kod inceleme sırasında beklenmeyen bir hata oluştu");
     }
     setReviewing(false);
-  }, [params.owner, params.repo, prNumber, selectedModel]);
+  }, [params.owner, params.repo, prNumber, selectedModel, report, statusInfo]);
 
   async function handlePostReviewToGitHub() {
     if (codeReview.length === 0) return;
@@ -251,6 +252,11 @@ export default function AnalysisPage() {
           // No history - do NOT auto-analyze, just show button
           setStatusInfo({ needsReanalysis: false, currentHeadSha: status.currentHeadSha });
           setReport(null);
+        }
+
+        // Smart default tab: if only code review exists, switch to code-review tab
+        if (!status.lastAnalysis && status.lastCodeReview) {
+          setActiveTab("code-review");
         }
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
@@ -418,7 +424,6 @@ export default function AnalysisPage() {
 
   async function handleReanalyze() {
     setError("");
-    setCodeReview([]);
     await runNewAnalysis();
     setHistory([]);
     setCodeReviewHistory([]);
@@ -428,6 +433,9 @@ export default function AnalysisPage() {
     setError("");
     await runNewAnalysis();
   }
+
+  // Derived state
+  const hasAnyData = !!report || codeReview.length > 0;
 
   // Badge counts
   const scenarioCount = report?.testScenarios?.length || 0;
@@ -580,8 +588,8 @@ export default function AnalysisPage() {
         </div>
       )}
 
-      {/* No analysis yet - show button */}
-      {!loading && !analyzing && !report && !error && (
+      {/* No data yet - show two independent action buttons */}
+      {!loading && !reviewing && !analyzing && !hasAnyData && !error && (
         <div className="flex flex-col items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] py-16 text-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-[var(--color-text-muted)] animate-float">
             <circle cx="11" cy="11" r="8"/>
@@ -591,25 +599,42 @@ export default function AnalysisPage() {
             Henüz analiz yapılmadı
           </h3>
           <p className="mb-6 text-sm text-[var(--color-text-muted)]">
-            Bu PR için henüz bir analiz bulunmuyor. Analiz başlatmak için aşağıdaki butona tıklayın.
+            Bu PR için henüz bir analiz bulunmuyor. Aşağıdaki butonlardan birini seçerek başlayın.
           </p>
-          <button
-            onClick={handleFirstAnalysis}
-            className="btn-glow rounded-lg px-6 py-2.5 text-sm font-medium text-white active:scale-95 transition-all"
-            style={{ background: "var(--gradient-primary)" }}
-          >
-            <span className="flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="5 3 19 12 5 21 5 3"/>
-              </svg>
-              Analiz Et
-            </span>
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={runCodeReview}
+              className="btn-glow rounded-lg px-6 py-2.5 text-sm font-medium text-white active:scale-95 transition-all"
+              style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}
+            >
+              <span className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m16 6 4 14"/>
+                  <path d="M12 6v14"/>
+                  <path d="M8 8v12"/>
+                  <path d="M4 4v16"/>
+                </svg>
+                Kod İncelemesi Yap
+              </span>
+            </button>
+            <button
+              onClick={handleFirstAnalysis}
+              className="btn-glow rounded-lg px-6 py-2.5 text-sm font-medium text-white active:scale-95 transition-all"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              <span className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Test Senaryoları Çıkart
+              </span>
+            </button>
+          </div>
         </div>
       )}
 
       {/* Tabs - Pill/Segment style */}
-      {!loading && report && (
+      {!loading && hasAnyData && (
         <div className="mb-6 flex gap-1 overflow-x-auto rounded-xl bg-[var(--color-bg-tertiary)] p-1">
           {tabs.map((tab) => (
             <button
@@ -632,7 +657,7 @@ export default function AnalysisPage() {
         </div>
       )}
 
-      {(loading || analyzing) && <AnalysisSkeleton />}
+      {(loading || analyzing || (reviewing && !hasAnyData)) && <AnalysisSkeleton />}
 
       {error && (
         <div className="flex flex-col items-center gap-3 rounded-xl bg-[var(--color-danger-light)] p-6 text-center">
@@ -647,6 +672,34 @@ export default function AnalysisPage() {
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
             </svg>
             {analyzing ? "Deneniyor..." : "Tekrar Dene"}
+          </button>
+        </div>
+      )}
+
+      {/* Test Scenarios Tab - Empty state when only code review exists */}
+      {activeTab === "test-scenarios" && !report && hasAnyData && !loading && !analyzing && (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] py-16 text-center animate-slide-up">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-[var(--color-text-muted)]">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          <h3 className="mb-2 text-lg font-semibold text-[var(--color-text-primary)]">
+            Henüz test senaryosu çıkarılmadı
+          </h3>
+          <p className="mb-6 text-sm text-[var(--color-text-muted)]">
+            Test senaryolarını oluşturmak için aşağıdaki butona tıklayın.
+          </p>
+          <button
+            onClick={handleFirstAnalysis}
+            disabled={analyzing}
+            className="btn-glow rounded-lg px-6 py-2.5 text-sm font-medium text-white active:scale-95 transition-all disabled:opacity-50"
+            style={{ background: "var(--gradient-primary)" }}
+          >
+            <span className="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              {analyzing ? "Analiz ediliyor..." : "Test Senaryoları Çıkart"}
+            </span>
           </button>
         </div>
       )}
@@ -716,7 +769,7 @@ export default function AnalysisPage() {
       )}
 
       {/* Code Review Tab */}
-      {activeTab === "code-review" && report && !loading && !analyzing && (
+      {activeTab === "code-review" && !loading && !analyzing && (
         <>
           {codeReview.length > 0 ? (
             <div className="animate-slide-up">
