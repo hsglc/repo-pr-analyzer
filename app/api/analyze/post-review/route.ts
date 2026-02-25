@@ -4,6 +4,7 @@ import { verifyAuth, withRequestContext } from "@/lib/auth-server";
 import { findApiKeysByUserId } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { GitHubPlatform } from "@/lib/core/platforms/github-platform";
+import { getBotOctokit } from "@/lib/github-app-auth";
 import { ownerSchema, repoSchema } from "@/lib/validation";
 
 const CodeReviewItemSchema = z.object({
@@ -49,7 +50,8 @@ export async function POST(request: Request) {
     }
 
     const githubToken = decrypt(apiKeys.githubToken);
-    const platform = new GitHubPlatform(githubToken, owner, repo);
+    const botOctokit = await getBotOctokit(owner, repo).catch(() => null);
+    const platform = new GitHubPlatform(githubToken, owner, repo, botOctokit);
 
     // Build review body summary
     const criticalCount = codeReview.filter((i) => i.severity === "critical").length;

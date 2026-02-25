@@ -2,13 +2,20 @@ import { Octokit } from "@octokit/rest";
 
 export class GitHubPlatform {
   private octokit: Octokit;
+  private botOctokit: Octokit | null;
+
+  private get writeOctokit(): Octokit {
+    return this.botOctokit ?? this.octokit;
+  }
 
   constructor(
     token: string,
     private owner: string,
-    private repo: string
+    private repo: string,
+    botOctokit?: Octokit | null
   ) {
     this.octokit = new Octokit({ auth: token });
+    this.botOctokit = botOctokit ?? null;
   }
 
   async getDiff(prNumber: number): Promise<string> {
@@ -213,7 +220,7 @@ export class GitHubPlatform {
         body: c.body,
       }));
 
-    await this.octokit.pulls.createReview({
+    await this.writeOctokit.pulls.createReview({
       owner: this.owner,
       repo: this.repo,
       pull_number: prNumber,
@@ -295,14 +302,14 @@ export class GitHubPlatform {
     const existing = comments.find((c) => c.body?.includes(marker));
 
     if (existing) {
-      await this.octokit.issues.updateComment({
+      await this.writeOctokit.issues.updateComment({
         owner: this.owner,
         repo: this.repo,
         comment_id: existing.id,
         body,
       });
     } else {
-      await this.octokit.issues.createComment({
+      await this.writeOctokit.issues.createComment({
         owner: this.owner,
         repo: this.repo,
         issue_number: prNumber,
