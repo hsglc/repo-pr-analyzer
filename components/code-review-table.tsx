@@ -197,7 +197,7 @@ function ReviewItemCard({
           >
             <div className="border-t border-[var(--color-border)] p-4">
               <div className="mb-3">
-                <code className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-secondary)]">
+                <code className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-secondary)] break-all">
                   {location}
                 </code>
               </div>

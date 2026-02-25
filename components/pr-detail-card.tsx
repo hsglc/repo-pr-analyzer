@@ -72,7 +72,7 @@ export function PRDetailCard({ owner, repo, prNumber }: { owner: string; repo: s
       {/* Header: Title + State */}
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-bold text-[var(--color-text-primary)] leading-tight">
+          <h3 className="text-lg font-bold text-[var(--color-text-primary)] leading-tight break-words">
             {details.title}
           </h3>
           <div className="mt-1.5 flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
@@ -92,15 +92,15 @@ export function PRDetailCard({ owner, repo, prNumber }: { owner: string; repo: s
       </div>
 
       {/* Branch info */}
-      <div className="mb-4 flex items-center gap-2 text-sm">
-        <code className="rounded bg-[var(--color-accent-light)] px-2 py-0.5 text-xs font-medium text-[var(--color-accent-text)]">
+      <div className="mb-4 flex items-center gap-2 text-sm flex-wrap">
+        <code className="rounded bg-[var(--color-accent-light)] px-2 py-0.5 text-xs font-medium text-[var(--color-accent-text)] truncate max-w-[150px] sm:max-w-none">
           {details.baseBranch}
         </code>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-text-muted)]">
           <line x1="5" y1="12" x2="19" y2="12"/>
           <polyline points="12 5 19 12 12 19"/>
         </svg>
-        <code className="rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+        <code className="rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 truncate max-w-[150px] sm:max-w-none">
           {details.headBranch}
         </code>
       </div>

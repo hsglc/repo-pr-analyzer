@@ -27,7 +27,7 @@ export function ImpactSummary({ report }: { report: AnalysisReport }) {
         <RiskBadge level={impact.riskLevel} />
       </div>
 
-      <p className="mb-5 text-sm text-[var(--color-text-secondary)]">{impact.summary}</p>
+      <p className="mb-5 text-sm text-[var(--color-text-secondary)] break-words">{impact.summary}</p>
 
       {/* Stats Grid + Donut */}
       <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">

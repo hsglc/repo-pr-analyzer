@@ -174,7 +174,7 @@ export async function runAnalysis(params: AnalysisParams): Promise<AnalysisResul
   try {
     const provider = createAIProvider(aiProvider, aiApiKey, model);
     const testGen = new TestGenerator(provider);
-    testScenarios = await testGen.generate(impact, parsedFiles, 15);
+    testScenarios = await testGen.generate(impact, parsedFiles, 10);
   } catch (err) {
     if (err instanceof AnalysisError) throw err;
     handleAIError(err);
@@ -234,7 +234,7 @@ export async function runCodeReview(params: AnalysisParams): Promise<CodeReviewR
   try {
     const provider = createAIProvider(aiProvider, aiApiKey, model);
     const reviewGen = new CodeReviewGenerator(provider);
-    codeReview = await reviewGen.generate(impact, parsedFiles, 15);
+    codeReview = await reviewGen.generate(impact, parsedFiles, 10);
   } catch (err) {
     if (err instanceof AnalysisError) throw err;
     handleAIError(err);
@@ -290,7 +290,7 @@ export async function runBranchAnalysis(params: BranchAnalysisParams): Promise<A
   try {
     const provider = createAIProvider(aiProvider, aiApiKey, model);
     const testGen = new TestGenerator(provider);
-    testScenarios = await testGen.generate(impact, parsedFiles, 15);
+    testScenarios = await testGen.generate(impact, parsedFiles, 10);
   } catch (err) {
     if (err instanceof AnalysisError) throw err;
     handleAIError(err);
@@ -350,7 +350,7 @@ export async function runBranchCodeReview(params: BranchAnalysisParams): Promise
   try {
     const provider = createAIProvider(aiProvider, aiApiKey, model);
     const reviewGen = new CodeReviewGenerator(provider);
-    codeReview = await reviewGen.generate(impact, parsedFiles, 15);
+    codeReview = await reviewGen.generate(impact, parsedFiles, 10);
   } catch (err) {
     if (err instanceof AnalysisError) throw err;
     handleAIError(err);

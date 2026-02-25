@@ -118,7 +118,7 @@ export function DiffViewer({ owner, repo, prNumber }: { owner: string; repo: str
             {/* Diff content */}
             {expanded && (
               <div className="border-t border-[var(--color-border)] overflow-x-auto">
-                <table className="w-full text-[11px] font-mono sm:text-xs" style={{ borderCollapse: "collapse" }}>
+                <table className="w-full min-w-[600px] text-[11px] font-mono sm:text-xs" style={{ borderCollapse: "collapse" }}>
                   <tbody>
                     {file.lines.map((line, idx) => {
                       let bg = "";

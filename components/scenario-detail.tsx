@@ -27,7 +27,7 @@ export function ScenarioDetail({
         className="flex w-full items-center justify-between p-4 text-left"
         aria-expanded={open}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           {onToggle && (
             <input
               type="checkbox"
@@ -41,7 +41,7 @@ export function ScenarioDetail({
             />
           )}
           <span className="text-sm font-medium text-[var(--color-text-muted)]">{scenario.id}</span>
-          <span className={`font-medium ${
+          <span className={`font-medium min-w-0 break-words ${
             checked
               ? "text-[var(--color-text-muted)] line-through"
               : "text-[var(--color-text-primary)]"
@@ -49,7 +49,7 @@ export function ScenarioDetail({
             {scenario.title}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <RiskBadge level={scenario.priority} />
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -76,7 +76,7 @@ export function ScenarioDetail({
         }}
       >
         <div className="border-t border-[var(--color-border)] p-4">
-          <div className="mb-3 flex gap-4 text-sm text-[var(--color-text-secondary)]">
+          <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--color-text-secondary)]">
             <span>
               <strong>Özellik:</strong> {scenario.feature}
             </span>
