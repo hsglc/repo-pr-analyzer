@@ -210,6 +210,51 @@ export async function getLatestBranchAnalysis(
   return history[0];
 }
 
+// ─── Code Review ─────────────────────────────────────
+
+export interface DbCodeReview {
+  codeReview: string;    // JSON.stringify(CodeReviewItem[])
+  commitSha: string;
+  prTitle: string;
+  createdAt: string;
+}
+
+export async function saveCodeReview(
+  userId: string,
+  repoFullName: string,
+  prNumber: number,
+  data: DbCodeReview
+): Promise<string> {
+  const key = repoToKey(repoFullName);
+  return dbPush(`codeReviews/${userId}/${key}/${prNumber}`, data);
+}
+
+export async function getCodeReviewHistory(
+  userId: string,
+  repoFullName: string,
+  prNumber: number
+): Promise<(DbCodeReview & { id: string })[] | null> {
+  const key = repoToKey(repoFullName);
+  const data = await dbGet<Record<string, DbCodeReview>>(
+    `codeReviews/${userId}/${key}/${prNumber}`
+  );
+  if (!data) return null;
+
+  return Object.entries(data)
+    .map(([id, review]) => ({ id, ...review }))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function getLatestCodeReview(
+  userId: string,
+  repoFullName: string,
+  prNumber: number
+): Promise<(DbCodeReview & { id: string }) | null> {
+  const history = await getCodeReviewHistory(userId, repoFullName, prNumber);
+  if (!history || history.length === 0) return null;
+  return history[0];
+}
+
 // ─── Scenario Checks ─────────────────────────────────
 
 export async function saveScenarioChecks(

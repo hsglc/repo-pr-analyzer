@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyAuth, withRequestContext } from "@/lib/auth-server";
-import { findApiKeysByUserId, getLatestAnalysis } from "@/lib/db";
+import { findApiKeysByUserId, getLatestAnalysis, getLatestCodeReview } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { GitHubPlatform } from "@/lib/core/platforms/github-platform";
 import { validateOwnerRepoPRParams } from "@/lib/validation";
@@ -31,31 +31,48 @@ export async function GET(request: Request) {
     const githubToken = decrypt(apiKeys.githubToken);
     const platform = new GitHubPlatform(githubToken, owner, repo);
 
-    // Fetch latest analysis and current HEAD SHA in parallel
+    // Fetch latest analysis, latest code review, and current HEAD SHA in parallel
     // getPRHeadSha may fail (rate limit, network etc.) - handle gracefully
     let latestAnalysis: Awaited<ReturnType<typeof getLatestAnalysis>> = null;
+    let latestCodeReview: Awaited<ReturnType<typeof getLatestCodeReview>> = null;
     let currentHeadSha = "";
 
     try {
-      [latestAnalysis, currentHeadSha] = await Promise.all([
+      [latestAnalysis, latestCodeReview, currentHeadSha] = await Promise.all([
         getLatestAnalysis(userId, `${owner}/${repo}`, prNum),
+        getLatestCodeReview(userId, `${owner}/${repo}`, prNum),
         platform.getPRHeadSha(prNum),
       ]);
     } catch (innerError) {
       console.error("Status: GitHub/Firebase hatası:", innerError);
-      // Try just the analysis history without SHA comparison
+      // Try just the history without SHA comparison
       try {
-        latestAnalysis = await getLatestAnalysis(userId, `${owner}/${repo}`, prNum);
+        [latestAnalysis, latestCodeReview] = await Promise.all([
+          getLatestAnalysis(userId, `${owner}/${repo}`, prNum),
+          getLatestCodeReview(userId, `${owner}/${repo}`, prNum),
+        ]);
       } catch {
         // No history available either
       }
     }
+
+    // Build lastCodeReview payload if available
+    const lastCodeReview = latestCodeReview
+      ? {
+          id: latestCodeReview.id,
+          commitSha: latestCodeReview.commitSha,
+          createdAt: latestCodeReview.createdAt,
+          prTitle: latestCodeReview.prTitle,
+          codeReview: JSON.parse(latestCodeReview.codeReview),
+        }
+      : null;
 
     if (!latestAnalysis) {
       return NextResponse.json({
         hasHistory: false,
         needsReanalysis: false,
         currentHeadSha,
+        lastCodeReview,
       });
     }
 
@@ -73,6 +90,7 @@ export async function GET(request: Request) {
         prTitle: latestAnalysis.prTitle,
         report: JSON.parse(latestAnalysis.report),
       },
+      lastCodeReview,
     });
   } catch (error) {
     console.error("Status check error:", error);

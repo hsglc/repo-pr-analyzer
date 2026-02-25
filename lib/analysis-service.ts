@@ -135,6 +135,7 @@ export interface AnalysisResult {
 export interface CodeReviewResult {
   codeReview: CodeReviewItem[];
   headSha: string;
+  prTitle: string;
 }
 
 export async function runAnalysis(params: AnalysisParams): Promise<AnalysisResult> {
@@ -209,6 +210,7 @@ export async function runCodeReview(params: AnalysisParams): Promise<CodeReviewR
   const platform = new GitHubPlatform(githubToken, owner, repo);
   let rawDiff: string;
   let headSha: string;
+  let prTitle: string;
   try {
     const [diff, prInfo] = await Promise.all([
       platform.getDiff(prNumber),
@@ -216,6 +218,7 @@ export async function runCodeReview(params: AnalysisParams): Promise<CodeReviewR
     ]);
     rawDiff = diff;
     headSha = prInfo.headSha;
+    prTitle = prInfo.title;
   } catch (err) {
     if (err instanceof AnalysisError) throw err;
     handleGitHubError(err, "PR veya repo");
@@ -240,7 +243,7 @@ export async function runCodeReview(params: AnalysisParams): Promise<CodeReviewR
     handleAIError(err);
   }
 
-  return { codeReview, headSha };
+  return { codeReview, headSha, prTitle };
 }
 
 export interface BranchAnalysisParams {
@@ -356,7 +359,7 @@ export async function runBranchCodeReview(params: BranchAnalysisParams): Promise
     handleAIError(err);
   }
 
-  return { codeReview, headSha };
+  return { codeReview, headSha, prTitle: `Branch Analizi: ${headBranch} vs ${baseBranch}` };
 }
 
 function createAIProvider(provider: string, apiKey: string, model?: string): AIProvider {
