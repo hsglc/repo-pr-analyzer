@@ -6,11 +6,30 @@ export function buildTestGenerationSystemPrompt(): string {
   return `Sen deneyimli bir QA mühendisisin. PR değişikliklerini analiz ederek test senaryoları oluşturuyorsun.
 
 ## Talimatlar
-1. Risk seviyesine göre önceliklendir (critical > high > medium > low)
-2. Doğrudan etkilenen feature'lar için functional ve regression testleri yaz
-3. Dolaylı etkilenen feature'lar için integration testleri yaz
-4. Edge-case'leri gözden kaçırma
-5. Her senaryo için net, uygulanabilir adımlar yaz
+1. SADECE gerçek risk taşıyan, kırılma olasılığı yüksek senaryolara odaklan
+2. Risk seviyesine göre önceliklendir (critical > high > medium > low)
+3. Doğrudan etkilenen feature'lar için functional ve regression testleri yaz
+4. Dolaylı etkilenen feature'lar için integration testleri yaz
+5. Edge-case'leri gözden kaçırma
+6. Her senaryo için net, uygulanabilir adımlar yaz
+7. "low" öncelikli senaryo sayısını minimize et — yalnızca gerçekten gerekli olanları ekle
+
+## OLUŞTURULMAMASI Gereken Düşük Değerli Testler
+Aşağıdaki türde testler OLUŞTURMA:
+- UI metin, renk veya stil kontrolleri
+- Basit null/undefined kontrolleri (dil/framework zaten hallediyor)
+- Sayfa yüklenmesi gibi trivial kontroller
+- Bariz form validasyonları (boş alan kontrolü vb.)
+- Temel CRUD işlemleri (oluştur/oku/güncelle/sil'in çalıştığını doğrulama)
+
+## Odaklanılacak Kritik Alanlar
+- Veri bütünlüğü: veri kaybı, tutarsızlık, yanlış dönüşüm
+- Race condition: eşzamanlı işlemler, state yarışları
+- Güvenlik: yetkilendirme bypass, injection, veri sızıntısı
+- Performans: N+1 sorgu, bellek sızıntısı, sonsuz döngü
+- Entegrasyon: servisler arası iletişim, API kontratı değişiklikleri
+- Hata yayılımı: yakalanmayan hatalar, sessiz başarısızlıklar
+- Sınır değerleri: limit aşımı, taşma, beklenmeyen input
 
 Yanıtını SADECE geçerli JSON olarak ver. Markdown code block, açıklama veya ek metin ekleme — yalnızca JSON objesi döndür.
 
@@ -37,6 +56,8 @@ export function buildTestGenerationUserMessage(
   const pages = impact.pages.map((p) => `- ${p}`).join("\n");
 
   return `En fazla ${maxScenarios} test senaryosu oluştur.
+
+ÖNEMLİ: Trivial ve düşük değerli testler OLUŞTURMA. Sadece gerçek risk taşıyan, kırılma potansiyeli olan senaryolara odaklan. Basit UI kontrolleri, sayfa yükleme testleri veya bariz validasyonlar ekleme.
 
 Etki Analizi: ${impact.summary}
 Risk: ${impact.riskLevel.toUpperCase()}
@@ -122,23 +143,42 @@ export function buildCodeReviewSystemPrompt(diffContent: string): string {
 
 Yanıtını SADECE geçerli JSON olarak ver. Markdown code block, açıklama veya ek metin ekleme — yalnızca JSON objesi döndür.
 
+## RAPORLANMAMASI Gereken Düşük Değerli Bulgular
+Aşağıdaki türde bulguları RAPORLAMA:
+- Eksik yorum veya JSDoc
+- Stil tercihleri (satır uzunluğu, boşluk, parantez stili)
+- Import sıralama düzeni
+- İsimlendirme tercihi (camelCase vs snake_case vb.)
+- console.log kullanımı
+- Kullanılmayan import'lar
+- Dosya organizasyonu önerileri
+- Magic number uyarıları
+
+## Odaklanılacak Gerçek Sorunlar
+- Bug/mantık hatası: yanlış koşul, off-by-one, null dereference
+- Güvenlik: injection, XSS, CSRF, yetkilendirme bypass, veri sızıntısı
+- Race condition: eşzamanlı erişim, state yarışları
+- Bellek/performans: sızıntı, N+1 sorgu, gereksiz hesaplama, eksik memoization
+- Hata yönetimi: yakalanmayan exception, sessiz hata yutma, eksik error boundary
+- Veri bütünlüğü: kayıp veri, tutarsız state, yanlış dönüşüm
+
 İnceleme Kriterleri:
 1. Bug & Güvenlik: mantık hataları, injection, XSS, CSRF, race condition, hata yönetimi eksiklikleri
 2. Performans: gereksiz hesaplama, N+1 sorgu, bellek sızıntısı, eksik memoization
 3. SOLID Prensipleri: SRP, OCP, LSP, ISP, DIP ihlalleri
 4. ${detectedLang} Best Practice'leri:
 ${langPractices}
-5. Bakım & Stil: okunabilirlik, isimlendirme, DRY, karmaşıklık
 
 Talimatlar:
-- Severity: critical > warning > info > suggestion
-- Kategoriler: bug, security, performance, maintainability, style
+- Minimum severity: warning (info ve suggestion KULLANMA)
+- Kategoriler: bug, security, performance, maintainability (style kategorisi KULLANMA)
 - Her bulgu için dosya yolu ve satır numarası belirt
 - Düzeltme önerisi (kod snippet) ver
 - False positive'lerden kaçın
+- Emin olmadığın bulguyu RAPORLAMA — yalnızca kesin sorunları bildir
 
 JSON formatı:
-{"items":[{"id":"CR-001","file":"src/example.ts","line":42,"severity":"critical|warning|info|suggestion","category":"bug|security|performance|maintainability|style","title":"Başlık","description":"Açıklama","suggestion":"Öneri"}]}`;
+{"items":[{"id":"CR-001","file":"src/example.ts","line":42,"severity":"critical|warning","category":"bug|security|performance|maintainability","title":"Başlık","description":"Açıklama","suggestion":"Öneri"}]}`;
 }
 
 export function buildCodeReviewUserMessage(
@@ -151,6 +191,8 @@ export function buildCodeReviewUserMessage(
     .join("\n");
 
   return `En fazla ${maxItems} bulgu oluştur.
+
+ÖNEMLİ: Yalnızca gerçek bug, güvenlik açığı, performans sorunu veya kritik bakım sorunlarını raporla. Stil, yorum eksikliği, isimlendirme tercihi gibi düşük değerli bulgular OLUŞTURMA. Emin olmadığın bir bulguyu RAPORLAMA.
 
 Etki: ${impact.summary}
 Risk: ${impact.riskLevel.toUpperCase()}

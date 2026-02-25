@@ -4,6 +4,9 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import { ImpactSummary } from "@/components/impact-summary";
+import { TestScenariosTable } from "@/components/test-scenarios-table";
+import { CodeReviewTable } from "@/components/code-review-table";
 import { AnalysisResult } from "@/components/analysis-result";
 import { AnalysisSkeleton } from "@/components/skeletons";
 import { PRDetailCard } from "@/components/pr-detail-card";
@@ -24,6 +27,13 @@ interface AnalysisStatus {
     prTitle: string;
     report: AnalysisReport;
   };
+  lastCodeReview?: {
+    id: string;
+    commitSha: string;
+    createdAt: string;
+    prTitle: string;
+    codeReview: CodeReviewItem[];
+  } | null;
 }
 
 interface HistorySummary {
@@ -37,6 +47,16 @@ interface HistorySummary {
   featuresAffected: number;
 }
 
+interface CodeReviewHistorySummary {
+  id: string;
+  commitSha: string;
+  prTitle: string;
+  createdAt: string;
+  totalFindings: number;
+  criticalCount: number;
+  warningCount: number;
+}
+
 const RISK_EMOJI: Record<string, string> = {
   low: "🟢",
   medium: "🟡",
@@ -44,7 +64,7 @@ const RISK_EMOJI: Record<string, string> = {
   critical: "🔴",
 };
 
-type TabType = "current" | "history" | "changes" | "commits";
+type TabType = "test-scenarios" | "code-review" | "history" | "changes" | "commits";
 
 export default function AnalysisPage() {
   const params = useParams<{
@@ -58,7 +78,7 @@ export default function AnalysisPage() {
   const [error, setError] = useState("");
   const [posting, setPosting] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>("current");
+  const [activeTab, setActiveTab] = useState<TabType>("test-scenarios");
   const [history, setHistory] = useState<HistorySummary[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyReport, setHistoryReport] = useState<AnalysisReport | null>(null);
@@ -69,6 +89,12 @@ export default function AnalysisPage() {
   const [codeReview, setCodeReview] = useState<CodeReviewItem[]>([]);
   const [reviewing, setReviewing] = useState(false);
   const [postingReview, setPostingReview] = useState(false);
+
+  // Code review history state
+  const [codeReviewHistory, setCodeReviewHistory] = useState<CodeReviewHistorySummary[]>([]);
+  const [codeReviewHistoryLoading, setCodeReviewHistoryLoading] = useState(false);
+  const [selectedCRHistoryId, setSelectedCRHistoryId] = useState<string | null>(null);
+  const [selectedCRHistoryItems, setSelectedCRHistoryItems] = useState<CodeReviewItem[] | null>(null);
 
   // Checkbox state
   const [checkedIds, setCheckedIds] = useState<Record<string, boolean>>({});
@@ -205,6 +231,11 @@ export default function AnalysisPage() {
 
         if (controller.signal.aborted) return;
 
+        // Load code review from status if available
+        if (status.lastCodeReview) {
+          setCodeReview(status.lastCodeReview.codeReview);
+        }
+
         if (status.hasHistory && !status.needsReanalysis && status.lastAnalysis) {
           setReport(status.lastAnalysis.report);
           setCommitSha(status.lastAnalysis.commitSha);
@@ -287,7 +318,6 @@ export default function AnalysisPage() {
   }
 
   async function loadHistory() {
-    if (history.length > 0) return;
     setHistoryLoading(true);
     try {
       const res = await authFetch(
@@ -303,6 +333,26 @@ export default function AnalysisPage() {
     setHistoryLoading(false);
   }
 
+  async function loadCodeReviewHistory() {
+    setCodeReviewHistoryLoading(true);
+    try {
+      const res = await authFetch(
+        `/api/analyze/code-review-history?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}&prNumber=${prNumber}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setCodeReviewHistory(data.history || []);
+      }
+    } catch {
+      toast.error("Kod inceleme geçmişi yüklenemedi");
+    }
+    setCodeReviewHistoryLoading(false);
+  }
+
+  async function loadAllHistory() {
+    await Promise.all([loadHistory(), loadCodeReviewHistory()]);
+  }
+
   async function loadHistoryDetail(id: string) {
     setSelectedHistoryId(id);
     setHistoryReport(null);
@@ -316,6 +366,22 @@ export default function AnalysisPage() {
       }
     } catch {
       toast.error("Analiz detayı yüklenemedi");
+    }
+  }
+
+  async function loadCRHistoryDetail(id: string) {
+    setSelectedCRHistoryId(id);
+    setSelectedCRHistoryItems(null);
+    try {
+      const res = await authFetch(
+        `/api/analyze/code-review-history?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}&prNumber=${prNumber}&id=${encodeURIComponent(id)}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedCRHistoryItems(data.codeReview || []);
+      }
+    } catch {
+      toast.error("Kod inceleme detayı yüklenemedi");
     }
   }
 
@@ -352,6 +418,7 @@ export default function AnalysisPage() {
     setCodeReview([]);
     await runNewAnalysis();
     setHistory([]);
+    setCodeReviewHistory([]);
   }
 
   async function handleFirstAnalysis() {
@@ -359,15 +426,44 @@ export default function AnalysisPage() {
     await runNewAnalysis();
   }
 
-  const tabs: { key: TabType; label: string; icon: React.ReactNode }[] = [
+  // Badge counts
+  const scenarioCount = report?.testScenarios?.length || 0;
+  const findingCount = codeReview.length;
+  const criticalFindings = codeReview.filter((r) => r.severity === "critical").length;
+
+  const tabs: { key: TabType; label: string; icon: React.ReactNode; badge?: React.ReactNode }[] = [
     {
-      key: "current",
-      label: "Güncel Analiz",
+      key: "test-scenarios",
+      label: "Test Senaryoları",
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
         </svg>
       ),
+      badge: scenarioCount > 0 ? (
+        <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-accent)] px-1.5 text-[10px] font-bold text-white">
+          {scenarioCount}
+        </span>
+      ) : null,
+    },
+    {
+      key: "code-review",
+      label: "Kod İnceleme",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m16 6 4 14"/>
+          <path d="M12 6v14"/>
+          <path d="M8 8v12"/>
+          <path d="M4 4v16"/>
+        </svg>
+      ),
+      badge: findingCount > 0 ? (
+        <span className={`ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold text-white ${
+          criticalFindings > 0 ? "bg-[var(--color-danger)]" : "bg-[var(--color-accent)]"
+        }`}>
+          {findingCount}
+        </span>
+      ) : null,
     },
     {
       key: "history",
@@ -510,7 +606,7 @@ export default function AnalysisPage() {
               key={tab.key}
               onClick={() => {
                 setActiveTab(tab.key);
-                if (tab.key === "history") loadHistory();
+                if (tab.key === "history") loadAllHistory();
               }}
               className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all sm:px-4 ${
                 activeTab === tab.key
@@ -520,6 +616,7 @@ export default function AnalysisPage() {
             >
               {tab.icon}
               <span className="hidden sm:inline">{tab.label}</span>
+              {tab.badge}
             </button>
           ))}
         </div>
@@ -544,15 +641,28 @@ export default function AnalysisPage() {
         </div>
       )}
 
-      {/* Current Analysis Tab */}
-      {activeTab === "current" && report && !loading && !analyzing && (
+      {/* Test Scenarios Tab */}
+      {activeTab === "test-scenarios" && report && !loading && !analyzing && (
         <>
-          <AnalysisResult
-            report={report}
-            checkedIds={checkedIds}
-            onToggleCheck={handleToggleCheck}
-            codeReview={codeReview}
-          />
+          <div className="space-y-6 animate-slide-up">
+            <div className="rounded-lg bg-[var(--color-bg-primary)] p-4 shadow-sm">
+              <h3 className="text-lg font-bold text-[var(--color-text-primary)] break-words">
+                {report.prTitle}{" "}
+                <span className="text-[var(--color-text-muted)]">#{report.prNumber}</span>
+              </h3>
+              <p className="text-sm text-[var(--color-text-muted)]">
+                {new Date(report.timestamp).toLocaleString("tr-TR")}
+              </p>
+            </div>
+
+            <ImpactSummary report={report} />
+
+            <TestScenariosTable
+              scenarios={report.testScenarios}
+              checkedIds={checkedIds}
+              onToggleCheck={handleToggleCheck}
+            />
+          </div>
 
           {/* Action Buttons */}
           <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -569,6 +679,58 @@ export default function AnalysisPage() {
               {posting ? "Yazılıyor..." : "PR'a Yaz"}
             </button>
 
+            <button
+              onClick={handleReanalyze}
+              disabled={analyzing}
+              className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors disabled:opacity-50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+              {analyzing ? "Analiz ediliyor..." : "Tekrar Analiz Et"}
+            </button>
+
+            <Link
+              href={`/settings/configs/${params.owner}/${params.repo}`}
+              className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              Yapılandırma
+            </Link>
+          </div>
+        </>
+      )}
+
+      {/* Code Review Tab */}
+      {activeTab === "code-review" && report && !loading && !analyzing && (
+        <>
+          {codeReview.length > 0 ? (
+            <div className="animate-slide-up">
+              <CodeReviewTable items={codeReview} />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] py-16 text-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-[var(--color-text-muted)]">
+                <path d="m16 6 4 14"/>
+                <path d="M12 6v14"/>
+                <path d="M8 8v12"/>
+                <path d="M4 4v16"/>
+              </svg>
+              <h3 className="mb-2 text-lg font-semibold text-[var(--color-text-primary)]">
+                Henüz kod inceleme yapılmadı
+              </h3>
+              <p className="mb-6 text-sm text-[var(--color-text-muted)]">
+                PR kodunu incelemek ve potansiyel sorunları tespit etmek için aşağıdaki butona tıklayın.
+              </p>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
               onClick={runCodeReview}
               disabled={reviewing}
@@ -591,7 +753,7 @@ export default function AnalysisPage() {
                     <path d="M8 8v12"/>
                     <path d="M4 4v16"/>
                   </svg>
-                  Kod İnceleme
+                  {codeReview.length > 0 ? "Tekrar İncele" : "Kod İnceleme Başlat"}
                 </>
               )}
             </button>
@@ -607,86 +769,156 @@ export default function AnalysisPage() {
                   <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
                   <path d="M9 18c-4.51 2-5-2-7-2"/>
                 </svg>
-                {postingReview ? "Gönderiliyor..." : "GitHub'a Review Olarak Gönder"}
+                {postingReview ? "Gönderiliyor..." : "GitHub'a Review Gönder"}
               </button>
             )}
-
-            <Link
-              href={`/settings/configs/${params.owner}/${params.repo}`}
-              className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              Yapılandırmayı Düzenle
-            </Link>
           </div>
         </>
       )}
 
       {/* History Tab */}
       {activeTab === "history" && (
-        <div>
-          {historyLoading && (
-            <div className="py-8 text-center text-[var(--color-text-muted)]">
-              Geçmiş yükleniyor...
-            </div>
-          )}
+        <div className="space-y-8">
+          {/* Test Scenario History */}
+          <div>
+            <h3 className="mb-3 text-lg font-semibold text-[var(--color-text-primary)]">
+              Test Senaryosu Geçmişi
+            </h3>
 
-          {!historyLoading && history.length === 0 && (
-            <div className="py-8 text-center text-[var(--color-text-muted)]">
-              Henüz geçmiş analiz bulunmuyor.
-            </div>
-          )}
+            {historyLoading && (
+              <div className="py-6 text-center text-[var(--color-text-muted)]">
+                Geçmiş yükleniyor...
+              </div>
+            )}
 
-          {!historyLoading && history.length > 0 && (
-            <div className="space-y-3">
-              {history.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => loadHistoryDetail(item.id)}
-                  className={`w-full rounded-xl border p-4 text-left transition-all hover:border-[var(--color-accent)] ${
-                    selectedHistoryId === item.id
-                      ? "border-[var(--color-accent)] bg-[var(--color-accent-light)]"
-                      : "border-[var(--color-border)] bg-[var(--color-bg-primary)]"
-                  }`}
-                >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                        {new Date(item.createdAt).toLocaleString("tr-TR")}
-                      </span>
-                      <code className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-secondary)]">
-                        {item.commitSha.substring(0, 7)}
-                      </code>
+            {!historyLoading && history.length === 0 && (
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] py-6 text-center text-[var(--color-text-muted)]">
+                Henüz geçmiş analiz bulunmuyor.
+              </div>
+            )}
+
+            {!historyLoading && history.length > 0 && (
+              <div className="space-y-3">
+                {history.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => loadHistoryDetail(item.id)}
+                    className={`w-full rounded-xl border p-4 text-left transition-all hover:border-[var(--color-accent)] ${
+                      selectedHistoryId === item.id
+                        ? "border-[var(--color-accent)] bg-[var(--color-accent-light)]"
+                        : "border-[var(--color-border)] bg-[var(--color-bg-primary)]"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                          {new Date(item.createdAt).toLocaleString("tr-TR")}
+                        </span>
+                        <code className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-secondary)]">
+                          {item.commitSha.substring(0, 7)}
+                        </code>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-[var(--color-text-muted)]">
+                          {item.filesChanged} dosya, {item.featuresAffected} özellik
+                        </span>
+                        <span className="text-sm">
+                          {RISK_EMOJI[item.riskLevel] || "⚪"} {item.riskLevel}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-[var(--color-text-muted)]">
-                        {item.filesChanged} dosya, {item.featuresAffected} özellik
-                      </span>
-                      <span className="text-sm">
-                        {RISK_EMOJI[item.riskLevel] || "⚪"} {item.riskLevel}
-                      </span>
-                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Selected history detail */}
+            {selectedHistoryId && (
+              <div className="mt-6">
+                {!historyReport ? (
+                  <div className="py-4 text-center text-[var(--color-text-muted)]">
+                    Rapor yükleniyor...
                   </div>
-                </button>
-              ))}
-            </div>
-          )}
+                ) : (
+                  <AnalysisResult report={historyReport} />
+                )}
+              </div>
+            )}
+          </div>
 
-          {/* Selected history detail */}
-          {selectedHistoryId && (
-            <div className="mt-6">
-              {!historyReport ? (
-                <div className="py-4 text-center text-[var(--color-text-muted)]">
-                  Rapor yükleniyor...
-                </div>
-              ) : (
-                <AnalysisResult report={historyReport} />
-              )}
-            </div>
-          )}
+          {/* Code Review History */}
+          <div>
+            <h3 className="mb-3 text-lg font-semibold text-[var(--color-text-primary)]">
+              Kod İnceleme Geçmişi
+            </h3>
+
+            {codeReviewHistoryLoading && (
+              <div className="py-6 text-center text-[var(--color-text-muted)]">
+                Kod inceleme geçmişi yükleniyor...
+              </div>
+            )}
+
+            {!codeReviewHistoryLoading && codeReviewHistory.length === 0 && (
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] py-6 text-center text-[var(--color-text-muted)]">
+                Henüz kod inceleme geçmişi bulunmuyor.
+              </div>
+            )}
+
+            {!codeReviewHistoryLoading && codeReviewHistory.length > 0 && (
+              <div className="space-y-3">
+                {codeReviewHistory.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => loadCRHistoryDetail(item.id)}
+                    className={`w-full rounded-xl border p-4 text-left transition-all hover:border-[var(--color-accent)] ${
+                      selectedCRHistoryId === item.id
+                        ? "border-[var(--color-accent)] bg-[var(--color-accent-light)]"
+                        : "border-[var(--color-border)] bg-[var(--color-bg-primary)]"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                          {new Date(item.createdAt).toLocaleString("tr-TR")}
+                        </span>
+                        <code className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-secondary)]">
+                          {item.commitSha.substring(0, 7)}
+                        </code>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-[var(--color-text-muted)]">
+                          {item.totalFindings} bulgu
+                        </span>
+                        {item.criticalCount > 0 && (
+                          <span className="inline-flex items-center rounded-full bg-[var(--color-danger-light)] px-2 py-0.5 text-[10px] font-bold text-[var(--color-danger)]">
+                            {item.criticalCount} kritik
+                          </span>
+                        )}
+                        {item.warningCount > 0 && (
+                          <span className="inline-flex items-center rounded-full bg-[var(--color-warning-light)] px-2 py-0.5 text-[10px] font-bold text-[var(--color-warning)]">
+                            {item.warningCount} uyarı
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Selected code review history detail */}
+            {selectedCRHistoryId && (
+              <div className="mt-6">
+                {!selectedCRHistoryItems ? (
+                  <div className="py-4 text-center text-[var(--color-text-muted)]">
+                    Kod inceleme yükleniyor...
+                  </div>
+                ) : (
+                  <CodeReviewTable items={selectedCRHistoryItems} />
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

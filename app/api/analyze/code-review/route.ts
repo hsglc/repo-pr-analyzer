@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyAuth, withRequestContext } from "@/lib/auth-server";
-import { findApiKeysByUserId } from "@/lib/db";
+import { findApiKeysByUserId, saveCodeReview } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { runCodeReview, AnalysisError } from "@/lib/analysis-service";
 import { ownerSchema, repoSchema, modelSchema } from "@/lib/validation";
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       aiApiKey = decrypt(apiKeys.claudeApiKey);
     }
 
-    const { codeReview, headSha } = await runCodeReview({
+    const { codeReview, headSha, prTitle } = await runCodeReview({
       owner,
       repo,
       prNumber,
@@ -55,6 +55,18 @@ export async function POST(request: Request) {
       userId,
       model,
     });
+
+    // Save to Firebase (non-critical - don't let save failure break the response)
+    try {
+      await saveCodeReview(userId, `${owner}/${repo}`, prNumber, {
+        codeReview: JSON.stringify(codeReview),
+        commitSha: headSha,
+        prTitle,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (saveError) {
+      console.error("Kod inceleme kaydedilemedi (Firebase):", saveError);
+    }
 
     return NextResponse.json({ codeReview, commitSha: headSha });
   } catch (error) {
