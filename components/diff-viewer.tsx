@@ -23,24 +23,27 @@ export function DiffViewer({ owner, repo, prNumber }: { owner: string; repo: str
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    const controller = new AbortController();
     async function load() {
       try {
         const res = await authFetch(
-          `/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/diff`
+          `/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/diff`,
+          { signal: controller.signal }
         );
 
-        if (res.ok) {
+        if (res.ok && !controller.signal.aborted) {
           const data = await res.json();
           if (data.diff) {
             setFiles(parseDiff(data.diff));
           }
         }
-      } catch {
-        // Non-critical
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
       }
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
     load();
+    return () => controller.abort();
   }, [owner, repo, prNumber]);
 
   function toggleFile(path: string) {

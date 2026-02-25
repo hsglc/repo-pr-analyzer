@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { verifyAuth } from "@/lib/auth-server";
+import { verifyAuth, withRequestContext } from "@/lib/auth-server";
 import { findApiKeysByUserId } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { GitHubPlatform } from "@/lib/core/platforms/github-platform";
 import { ReportGenerator, COMMENT_MARKER } from "@/lib/core/generators/report-generator";
 import type { AnalysisReport } from "@/lib/core/types";
+import { ownerSchema, repoSchema } from "@/lib/validation";
 
 const FeatureImpactSchema = z.object({
   name: z.string(),
@@ -59,13 +60,14 @@ const AnalysisReportSchema = z.object({
 });
 
 const PostSchema = z.object({
-  owner: z.string().min(1),
-  repo: z.string().min(1),
+  owner: ownerSchema,
+  repo: repoSchema,
   prNumber: z.number().int().positive(),
   report: AnalysisReportSchema,
 });
 
 export async function POST(request: Request) {
+  return withRequestContext(async () => {
   const auth = await verifyAuth(request);
   if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
@@ -96,4 +98,5 @@ export async function POST(request: Request) {
     console.error("Post to PR error:", error);
     return NextResponse.json({ error: "Yorum yazılamadı" }, { status: 500 });
   }
+  });
 }

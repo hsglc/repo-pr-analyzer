@@ -1,9 +1,18 @@
-let _authToken: string | null = null;
+import { AsyncLocalStorage } from "node:async_hooks";
+
+interface RequestStore {
+  authToken: string | null;
+}
+
+export const requestContext = new AsyncLocalStorage<RequestStore>();
 
 export function setAuthToken(token: string | null) {
-  _authToken = token;
+  const store = requestContext.getStore();
+  if (store) {
+    store.authToken = token;
+  }
 }
 
 export function getAuthToken(): string | null {
-  return _authToken;
+  return requestContext.getStore()?.authToken ?? null;
 }

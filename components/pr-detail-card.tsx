@@ -39,18 +39,23 @@ export function PRDetailCard({ owner, repo, prNumber }: { owner: string; repo: s
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const controller = new AbortController();
     async function load() {
       try {
-        const res = await authFetch(`/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/details`);
-        if (res.ok) {
+        const res = await authFetch(
+          `/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/details`,
+          { signal: controller.signal }
+        );
+        if (res.ok && !controller.signal.aborted) {
           setDetails(await res.json());
         }
-      } catch {
-        // Non-critical
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
       }
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
     load();
+    return () => controller.abort();
   }, [owner, repo, prNumber]);
 
   if (loading) {

@@ -78,6 +78,13 @@ export default function AnalysisPage() {
   const prNumber = parseInt(params.number, 10);
   const isValidPR = !isNaN(prNumber) && prNumber > 0;
 
+  // Cleanup debounce timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
   const runNewAnalysis = useCallback(async () => {
     setAnalyzing(true);
     try {
@@ -176,11 +183,16 @@ export default function AnalysisPage() {
       return;
     }
 
+    const controller = new AbortController();
+
     async function checkStatus() {
       try {
         const res = await authFetch(
-          `/api/analyze/status?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}&prNumber=${prNumber}`
+          `/api/analyze/status?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}&prNumber=${prNumber}`,
+          { signal: controller.signal }
         );
+
+        if (controller.signal.aborted) return;
 
         if (!res.ok) {
           setStatusInfo({ needsReanalysis: false, currentHeadSha: "" });
@@ -190,6 +202,8 @@ export default function AnalysisPage() {
         }
 
         const status: AnalysisStatus = await res.json();
+
+        if (controller.signal.aborted) return;
 
         if (status.hasHistory && !status.needsReanalysis && status.lastAnalysis) {
           setReport(status.lastAnalysis.report);
@@ -204,35 +218,43 @@ export default function AnalysisPage() {
           setStatusInfo({ needsReanalysis: false, currentHeadSha: status.currentHeadSha });
           setReport(null);
         }
-      } catch {
-        setStatusInfo({ needsReanalysis: false, currentHeadSha: "" });
-        setReport(null);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        if (!controller.signal.aborted) {
+          setStatusInfo({ needsReanalysis: false, currentHeadSha: "" });
+          setReport(null);
+        }
       }
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
 
     checkStatus();
+    return () => controller.abort();
   }, [params.owner, params.repo, prNumber, isValidPR]);
 
   // Load checkbox state on mount
   useEffect(() => {
     if (!isValidPR) return;
 
+    const controller = new AbortController();
+
     async function loadChecks() {
       try {
         const res = await authFetch(
-          `/api/analyze/checks?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}&prNumber=${prNumber}`
+          `/api/analyze/checks?owner=${encodeURIComponent(params.owner)}&repo=${encodeURIComponent(params.repo)}&prNumber=${prNumber}`,
+          { signal: controller.signal }
         );
-        if (res.ok) {
+        if (res.ok && !controller.signal.aborted) {
           const data = await res.json();
           setCheckedIds(data.checks || {});
         }
-      } catch {
-        // Non-critical, ignore
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
       }
     }
 
     loadChecks();
+    return () => controller.abort();
   }, [params.owner, params.repo, prNumber, isValidPR]);
 
   // Save checks to Firebase with debounce

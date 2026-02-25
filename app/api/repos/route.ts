@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { Octokit } from "@octokit/rest";
-import { verifyAuth } from "@/lib/auth-server";
+import { verifyAuth, withRequestContext } from "@/lib/auth-server";
 import { findApiKeysByUserId } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 
 export async function GET(request: Request) {
+  return withRequestContext(async () => {
   const auth = await verifyAuth(request);
   if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
@@ -49,4 +50,5 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
+  });
 }

@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { verifyAuth } from "@/lib/auth-server";
+import { verifyAuth, withRequestContext } from "@/lib/auth-server";
 import { findApiKeysByUserId, saveAnalysis } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { runAnalysis, AnalysisError } from "@/lib/analysis-service";
+import { ownerSchema, repoSchema, modelSchema } from "@/lib/validation";
 
 const AnalyzeSchema = z.object({
-  owner: z.string().min(1),
-  repo: z.string().min(1),
+  owner: ownerSchema,
+  repo: repoSchema,
   prNumber: z.number().int().positive(),
-  model: z.string().optional(),
+  model: modelSchema,
 });
 
 export async function POST(request: Request) {
+  return withRequestContext(async () => {
   const auth = await verifyAuth(request);
   if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
@@ -79,4 +81,5 @@ export async function POST(request: Request) {
     console.error("Analyze error:", error);
     return NextResponse.json({ error: "Analiz sırasında hata oluştu" }, { status: 500 });
   }
+  });
 }

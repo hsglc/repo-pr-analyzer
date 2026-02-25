@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { verifyAuth } from "@/lib/auth-server";
+import { verifyAuth, withRequestContext } from "@/lib/auth-server";
 import { getAnalysisHistory } from "@/lib/db";
+import { validateOwnerRepoPRParams } from "@/lib/validation";
 
 export async function GET(request: Request) {
+  return withRequestContext(async () => {
   const auth = await verifyAuth(request);
   if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
@@ -10,20 +12,20 @@ export async function GET(request: Request) {
 
   const userId = auth.uid;
   const { searchParams } = new URL(request.url);
-  const owner = searchParams.get("owner");
-  const repo = searchParams.get("repo");
-  const prNumber = searchParams.get("prNumber");
-  const id = searchParams.get("id");
+  const result = validateOwnerRepoPRParams(searchParams);
 
-  if (!owner || !repo || !prNumber) {
-    return NextResponse.json({ error: "owner, repo ve prNumber gerekli" }, { status: 400 });
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: 400 });
   }
+
+  const { owner, repo, prNumber } = result.data;
+  const id = searchParams.get("id");
 
   try {
     const history = await getAnalysisHistory(
       userId,
       `${owner}/${repo}`,
-      parseInt(prNumber, 10)
+      prNumber
     );
 
     if (!history) {
@@ -62,4 +64,5 @@ export async function GET(request: Request) {
     console.error("History error:", error);
     return NextResponse.json({ error: "Geçmiş yüklenemedi" }, { status: 500 });
   }
+  });
 }

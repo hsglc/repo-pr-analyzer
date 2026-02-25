@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { verifyAuth } from "@/lib/auth-server";
+import { verifyAuth, withRequestContext } from "@/lib/auth-server";
 import { findApiKeysByUserId, saveBranchAnalysis } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { runBranchAnalysis, AnalysisError } from "@/lib/analysis-service";
+import { ownerSchema, repoSchema, branchSchema, modelSchema } from "@/lib/validation";
 
 const BranchAnalyzeSchema = z.object({
-  owner: z.string().min(1),
-  repo: z.string().min(1),
-  baseBranch: z.string().min(1),
-  headBranch: z.string().min(1),
-  model: z.string().optional(),
+  owner: ownerSchema,
+  repo: repoSchema,
+  baseBranch: branchSchema,
+  headBranch: branchSchema,
+  model: modelSchema,
 });
 
 export async function POST(request: Request) {
+  return withRequestContext(async () => {
   const auth = await verifyAuth(request);
   if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
@@ -93,4 +95,5 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+  });
 }
