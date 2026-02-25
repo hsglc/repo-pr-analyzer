@@ -279,6 +279,31 @@ export async function getScenarioChecks(
   return data || {};
 }
 
+// ─── Codebase Index ─────────────────────────────────────
+
+export interface DbCodebaseIndex {
+  commitSha: string;
+  indexData: string;     // JSON.stringify(CodebaseIndex)
+  createdAt: string;
+}
+
+export async function saveCodebaseIndex(
+  userId: string,
+  repoFullName: string,
+  data: DbCodebaseIndex
+): Promise<void> {
+  const key = repoToKey(repoFullName);
+  await dbSet(`codebaseIndex/${userId}/${key}`, data);
+}
+
+export async function getCodebaseIndex(
+  userId: string,
+  repoFullName: string
+): Promise<DbCodebaseIndex | null> {
+  const key = repoToKey(repoFullName);
+  return dbGet<DbCodebaseIndex>(`codebaseIndex/${userId}/${key}`);
+}
+
 // ─── RepoConfig ────────────────────────────────────────
 
 export async function findRepoConfig(userId: string, repoFullName: string): Promise<DbRepoConfig | null> {

@@ -13,7 +13,8 @@ export class CodeReviewGenerator {
   async generate(
     impact: ImpactResult,
     files: ParsedFile[],
-    maxItems: number
+    maxItems: number,
+    codebaseContext?: string
   ): Promise<CodeReviewItem[]> {
     const fileDiffs = files.map((f) => {
       const header = `--- ${f.oldPath || f.path}\n+++ ${f.path}`;
@@ -88,6 +89,6 @@ export class CodeReviewGenerator {
       diffContent += `\n\n[Diff çok büyük — ${skipped.length} dosya özet olarak eklendi:]\n${skipped.join("\n")}`;
     }
 
-    return this.aiProvider.generateCodeReview(impact, diffContent, maxItems);
+    return this.aiProvider.generateCodeReview(impact, diffContent, maxItems, codebaseContext);
   }
 }

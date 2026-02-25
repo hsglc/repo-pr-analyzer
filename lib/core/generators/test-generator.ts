@@ -7,7 +7,8 @@ export class TestGenerator {
   async generate(
     impact: ImpactResult,
     files: ParsedFile[],
-    maxScenarios: number
+    maxScenarios: number,
+    codebaseContext?: string
   ): Promise<TestScenario[]> {
     const diffSummary = files
       .map(
@@ -19,7 +20,8 @@ export class TestGenerator {
     return this.aiProvider.generateTestScenarios(
       impact,
       diffSummary,
-      maxScenarios
+      maxScenarios,
+      codebaseContext
     );
   }
 }

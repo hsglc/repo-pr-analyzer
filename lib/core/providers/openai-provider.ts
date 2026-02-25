@@ -92,9 +92,10 @@ export class OpenAIProvider implements AIProvider {
   async generateTestScenarios(
     impact: ImpactResult,
     diffSummary: string,
-    maxScenarios: number
+    maxScenarios: number,
+    codebaseContext?: string
   ): Promise<TestScenario[]> {
-    const systemPrompt = buildTestGenerationSystemPrompt();
+    const systemPrompt = buildTestGenerationSystemPrompt(codebaseContext);
     const userMessage = buildTestGenerationUserMessage(impact, diffSummary, maxScenarios);
     const content = await this.callOpenAI(systemPrompt, userMessage);
     const parsed = TestResponseSchema.parse(JSON.parse(content));
@@ -104,9 +105,10 @@ export class OpenAIProvider implements AIProvider {
   async generateCodeReview(
     impact: ImpactResult,
     diffContent: string,
-    maxItems: number
+    maxItems: number,
+    codebaseContext?: string
   ): Promise<CodeReviewItem[]> {
-    const systemPrompt = buildCodeReviewSystemPrompt(diffContent);
+    const systemPrompt = buildCodeReviewSystemPrompt(diffContent, codebaseContext);
     const userMessage = buildCodeReviewUserMessage(impact, diffContent, maxItems);
     const content = await this.callOpenAI(systemPrompt, userMessage);
     const parsed = CodeReviewResponseSchema.parse(JSON.parse(content));

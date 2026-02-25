@@ -4,12 +4,14 @@ export interface AIProvider {
   generateTestScenarios(
     impact: ImpactResult,
     diffSummary: string,
-    maxScenarios: number
+    maxScenarios: number,
+    codebaseContext?: string
   ): Promise<TestScenario[]>;
 
   generateCodeReview(
     impact: ImpactResult,
     diffContent: string,
-    maxItems: number
+    maxItems: number,
+    codebaseContext?: string
   ): Promise<CodeReviewItem[]>;
 }

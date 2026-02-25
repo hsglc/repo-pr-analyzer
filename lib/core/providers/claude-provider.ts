@@ -145,9 +145,10 @@ export class ClaudeProvider implements AIProvider {
   async generateTestScenarios(
     impact: ImpactResult,
     diffSummary: string,
-    maxScenarios: number
+    maxScenarios: number,
+    codebaseContext?: string
   ): Promise<TestScenario[]> {
-    const systemPrompt = buildTestGenerationSystemPrompt();
+    const systemPrompt = buildTestGenerationSystemPrompt(codebaseContext);
     const userMessage = buildTestGenerationUserMessage(impact, diffSummary, maxScenarios);
     const jsonStr = await this.callClaude(systemPrompt, userMessage);
     const parsed = TestResponseSchema.parse(this.parseJSON(jsonStr));
@@ -157,9 +158,10 @@ export class ClaudeProvider implements AIProvider {
   async generateCodeReview(
     impact: ImpactResult,
     diffContent: string,
-    maxItems: number
+    maxItems: number,
+    codebaseContext?: string
   ): Promise<CodeReviewItem[]> {
-    const systemPrompt = buildCodeReviewSystemPrompt(diffContent);
+    const systemPrompt = buildCodeReviewSystemPrompt(diffContent, codebaseContext);
     const userMessage = buildCodeReviewUserMessage(impact, diffContent, maxItems);
     const jsonStr = await this.callClaude(systemPrompt, userMessage);
     const parsed = CodeReviewResponseSchema.parse(this.parseJSON(jsonStr));

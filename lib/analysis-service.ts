@@ -6,8 +6,13 @@ import { ClaudeProvider } from "@/lib/core/providers/claude-provider";
 import { OpenAIProvider } from "@/lib/core/providers/openai-provider";
 import { GitHubPlatform } from "@/lib/core/platforms/github-platform";
 import type { AIProvider } from "@/lib/core/providers/ai-provider";
-import type { AnalysisReport, CodeReviewItem } from "@/lib/core/types";
+import type { AnalysisReport, CodeReviewItem, ParsedFile } from "@/lib/core/types";
 import { resolveConfig } from "@/lib/config-resolver";
+import { buildCodebaseIndex } from "@/lib/core/codebase-indexer";
+import type { CodebaseIndex } from "@/lib/core/codebase-indexer";
+import { retrieveContext } from "@/lib/core/context-retriever";
+import { getCodebaseIndex, saveCodebaseIndex } from "@/lib/db";
+import { Octokit } from "@octokit/rest";
 import { z } from "zod";
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
@@ -170,18 +175,21 @@ export async function runAnalysis(params: AnalysisParams): Promise<AnalysisResul
   const analyzer = new ImpactAnalyzer(impactMapConfig);
   const impact = analyzer.analyze(parsedFiles);
 
-  // 5. AI test generation
+  // 5. Codebase context (best-effort)
+  const codebaseContext = await getOrBuildCodebaseContext(owner, repo, githubToken, userId, parsedFiles);
+
+  // 6. AI test generation
   let testScenarios;
   try {
     const provider = createAIProvider(aiProvider, aiApiKey, model);
     const testGen = new TestGenerator(provider);
-    testScenarios = await testGen.generate(impact, parsedFiles, 10);
+    testScenarios = await testGen.generate(impact, parsedFiles, 10, codebaseContext);
   } catch (err) {
     if (err instanceof AnalysisError) throw err;
     handleAIError(err);
   }
 
-  // 6. Build report
+  // 7. Build report
   const report: AnalysisReport = {
     prNumber,
     prTitle,
@@ -232,12 +240,15 @@ export async function runCodeReview(params: AnalysisParams): Promise<CodeReviewR
   const analyzer = new ImpactAnalyzer(impactMapConfig);
   const impact = analyzer.analyze(parsedFiles);
 
-  // 5. AI code review
+  // 5. Codebase context (best-effort)
+  const codebaseContext = await getOrBuildCodebaseContext(owner, repo, githubToken, userId, parsedFiles);
+
+  // 6. AI code review
   let codeReview;
   try {
     const provider = createAIProvider(aiProvider, aiApiKey, model);
     const reviewGen = new CodeReviewGenerator(provider);
-    codeReview = await reviewGen.generate(impact, parsedFiles, 10);
+    codeReview = await reviewGen.generate(impact, parsedFiles, 10, codebaseContext);
   } catch (err) {
     if (err instanceof AnalysisError) throw err;
     handleAIError(err);
@@ -288,18 +299,21 @@ export async function runBranchAnalysis(params: BranchAnalysisParams): Promise<A
   const analyzer = new ImpactAnalyzer(impactMapConfig);
   const impact = analyzer.analyze(parsedFiles);
 
-  // 5. AI test generation
+  // 5. Codebase context (best-effort)
+  const codebaseContext = await getOrBuildCodebaseContext(owner, repo, githubToken, userId, parsedFiles);
+
+  // 6. AI test generation
   let testScenarios;
   try {
     const provider = createAIProvider(aiProvider, aiApiKey, model);
     const testGen = new TestGenerator(provider);
-    testScenarios = await testGen.generate(impact, parsedFiles, 10);
+    testScenarios = await testGen.generate(impact, parsedFiles, 10, codebaseContext);
   } catch (err) {
     if (err instanceof AnalysisError) throw err;
     handleAIError(err);
   }
 
-  // 6. Build report
+  // 7. Build report
   const report: AnalysisReport = {
     prNumber: 0,
     prTitle: `Branch Analizi: ${headBranch} vs ${baseBranch}`,
@@ -348,18 +362,79 @@ export async function runBranchCodeReview(params: BranchAnalysisParams): Promise
   const analyzer = new ImpactAnalyzer(impactMapConfig);
   const impact = analyzer.analyze(parsedFiles);
 
-  // 5. AI code review
+  // 5. Codebase context (best-effort)
+  const codebaseContext = await getOrBuildCodebaseContext(owner, repo, githubToken, userId, parsedFiles);
+
+  // 6. AI code review
   let codeReview;
   try {
     const provider = createAIProvider(aiProvider, aiApiKey, model);
     const reviewGen = new CodeReviewGenerator(provider);
-    codeReview = await reviewGen.generate(impact, parsedFiles, 10);
+    codeReview = await reviewGen.generate(impact, parsedFiles, 10, codebaseContext);
   } catch (err) {
     if (err instanceof AnalysisError) throw err;
     handleAIError(err);
   }
 
   return { codeReview, headSha, prTitle: `Branch Analizi: ${headBranch} vs ${baseBranch}` };
+}
+
+async function getOrBuildCodebaseContext(
+  owner: string,
+  repo: string,
+  githubToken: string,
+  userId: string,
+  parsedFiles: ParsedFile[]
+): Promise<string | undefined> {
+  const repoFullName = `${owner}/${repo}`;
+  const changedFilePaths = parsedFiles.map((f) => f.path);
+
+  try {
+    // 1. Check for cached index in Firebase
+    const existing = await getCodebaseIndex(userId, repoFullName);
+
+    if (existing) {
+      // 2. Get current HEAD sha to check freshness
+      let currentHeadSha: string;
+      try {
+        const octokit = new Octokit({ auth: githubToken });
+        const { data: repoData } = await octokit.repos.get({ owner, repo });
+        const { data: refData } = await octokit.git.getRef({
+          owner,
+          repo,
+          ref: `heads/${repoData.default_branch}`,
+        });
+        currentHeadSha = refData.object.sha;
+      } catch {
+        // If we can't get HEAD sha, use cached index anyway
+        const index: CodebaseIndex = JSON.parse(existing.indexData);
+        console.log("Using cached codebase index (could not verify freshness)");
+        return retrieveContext(index, changedFilePaths);
+      }
+
+      if (existing.commitSha === currentHeadSha) {
+        const index: CodebaseIndex = JSON.parse(existing.indexData);
+        console.log("Using cached codebase index");
+        return retrieveContext(index, changedFilePaths);
+      }
+    }
+
+    // 3. Build new index
+    const index = await buildCodebaseIndex(owner, repo, githubToken);
+
+    // 4. Save to Firebase
+    await saveCodebaseIndex(userId, repoFullName, {
+      commitSha: index.commitSha,
+      indexData: JSON.stringify(index),
+      createdAt: index.createdAt,
+    });
+
+    return retrieveContext(index, changedFilePaths);
+  } catch (err) {
+    // Codebase indexing is best-effort — don't fail the analysis
+    console.warn("Codebase indexing failed, continuing without context:", (err as Error)?.message);
+    return undefined;
+  }
 }
 
 function createAIProvider(provider: string, apiKey: string, model?: string): AIProvider {

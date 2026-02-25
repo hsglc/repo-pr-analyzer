@@ -2,8 +2,13 @@ import type { ImpactResult } from "../types";
 
 // --- Test Generation Prompts ---
 
-export function buildTestGenerationSystemPrompt(): string {
+export function buildTestGenerationSystemPrompt(codebaseContext?: string): string {
+  const contextBlock = codebaseContext
+    ? `\n${codebaseContext}\n\nYukarıdaki codebase context'ini kullanarak değişikliklerin diğer modüllere etkisini daha iyi analiz et. Export edilen fonksiyonları, bağımlılıkları ve tüketicileri göz önünde bulundurarak daha spesifik test senaryoları oluştur.\n`
+    : "";
+
   return `Sen deneyimli bir QA mühendisisin. PR değişikliklerini analiz ederek test senaryoları oluşturuyorsun.
+${contextBlock}
 
 ## Talimatlar
 1. SADECE gerçek risk taşıyan, kırılma olasılığı yüksek senaryolara odaklan
@@ -135,12 +140,16 @@ function getLanguageBestPractices(lang: string): string {
 - Verimli veri yapıları ve algoritmalar`;
 }
 
-export function buildCodeReviewSystemPrompt(diffContent: string): string {
+export function buildCodeReviewSystemPrompt(diffContent: string, codebaseContext?: string): string {
   const detectedLang = detectLanguage(diffContent);
   const langPractices = getLanguageBestPractices(detectedLang);
 
-  return `Sen SOLID prensiplerini, performans optimizasyonunu ve ${detectedLang} best practice'lerini bilen senior bir yazılım mühendisi ve kod incelemecisisin.
+  const contextBlock = codebaseContext
+    ? `\n${codebaseContext}\n\nYukarıdaki codebase context'ini kullanarak değişikliklerin diğer modüllere etkisini daha iyi analiz et. Bağımlılıkları ve tüketicileri göz önünde bulundurarak daha kapsamlı bir inceleme yap.\n`
+    : "";
 
+  return `Sen SOLID prensiplerini, performans optimizasyonunu ve ${detectedLang} best practice'lerini bilen senior bir yazılım mühendisi ve kod incelemecisisin.
+${contextBlock}
 Yanıtını SADECE geçerli JSON olarak ver. Markdown code block, açıklama veya ek metin ekleme — yalnızca JSON objesi döndür.
 
 ## RAPORLANMAMASI Gereken Düşük Değerli Bulgular
