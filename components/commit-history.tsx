@@ -15,21 +15,24 @@ export function CommitHistory({ owner, repo, prNumber }: { owner: string; repo: 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const controller = new AbortController();
     async function load() {
       try {
         const res = await authFetch(
-          `/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/commits`
+          `/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${prNumber}/commits`,
+          { signal: controller.signal }
         );
-        if (res.ok) {
+        if (res.ok && !controller.signal.aborted) {
           const data = await res.json();
           setCommits(data.commits || []);
         }
-      } catch {
-        // Non-critical
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
       }
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
     load();
+    return () => controller.abort();
   }, [owner, repo, prNumber]);
 
   if (loading) {

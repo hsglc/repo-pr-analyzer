@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { verifyAuth } from "@/lib/auth-server";
+import { verifyAuth, withRequestContext } from "@/lib/auth-server";
 import { findApiKeysByUserId, upsertRepoConfig } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { resolveConfig } from "@/lib/config-resolver";
@@ -24,6 +24,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ owner: string; repo: string }> }
 ) {
+  return withRequestContext(async () => {
   const auth = await verifyAuth(request);
   if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
@@ -45,12 +46,14 @@ export async function GET(
   } catch {
     return NextResponse.json({ error: "Config yüklenemedi" }, { status: 500 });
   }
+  });
 }
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ owner: string; repo: string }> }
 ) {
+  return withRequestContext(async () => {
   const auth = await verifyAuth(request);
   if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
@@ -76,12 +79,14 @@ export async function PUT(
   } catch {
     return NextResponse.json({ error: "Config kaydedilemedi" }, { status: 500 });
   }
+  });
 }
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ owner: string; repo: string }> }
 ) {
+  return withRequestContext(async () => {
   const auth = await verifyAuth(request);
   if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
@@ -109,4 +114,5 @@ export async function POST(
     console.error("Auto-detect config error:", error);
     return NextResponse.json({ error: "Otomatik tespit başarısız" }, { status: 500 });
   }
+  });
 }

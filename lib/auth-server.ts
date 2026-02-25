@@ -1,6 +1,10 @@
-import { setAuthToken } from "./request-context";
+import { requestContext, setAuthToken } from "./request-context";
 
 const FIREBASE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_CONFIG_ID!;
+
+export function withRequestContext<T>(fn: () => Promise<T>): Promise<T> {
+  return requestContext.run({ authToken: null }, fn);
+}
 
 export async function verifyAuth(
   request: Request

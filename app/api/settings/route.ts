@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { verifyAuth } from "@/lib/auth-server";
+import { verifyAuth, withRequestContext } from "@/lib/auth-server";
 import { findApiKeysByUserId, upsertApiKeys } from "@/lib/db";
 import { encrypt } from "@/lib/encryption";
 
 export async function GET(request: Request) {
+  return withRequestContext(async () => {
   const auth = await verifyAuth(request);
   if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
@@ -19,6 +20,7 @@ export async function GET(request: Request) {
     hasOpenaiApiKey: !!apiKeys?.openaiApiKey,
     aiProvider: apiKeys?.aiProvider ?? "claude",
   });
+  });
 }
 
 const UpdateSchema = z.object({
@@ -29,6 +31,7 @@ const UpdateSchema = z.object({
 });
 
 export async function PUT(request: Request) {
+  return withRequestContext(async () => {
   const auth = await verifyAuth(request);
   if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
@@ -55,4 +58,5 @@ export async function PUT(request: Request) {
     const message = error instanceof Error ? error.message : "Ayarlar kaydedilemedi";
     return NextResponse.json({ error: message }, { status: 500 });
   }
+  });
 }

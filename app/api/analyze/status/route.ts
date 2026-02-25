@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import { verifyAuth } from "@/lib/auth-server";
+import { verifyAuth, withRequestContext } from "@/lib/auth-server";
 import { findApiKeysByUserId, getLatestAnalysis } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { GitHubPlatform } from "@/lib/core/platforms/github-platform";
+import { validateOwnerRepoPRParams } from "@/lib/validation";
 
 export async function GET(request: Request) {
+  return withRequestContext(async () => {
   const auth = await verifyAuth(request);
   if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
@@ -12,13 +14,13 @@ export async function GET(request: Request) {
 
   const userId = auth.uid;
   const { searchParams } = new URL(request.url);
-  const owner = searchParams.get("owner");
-  const repo = searchParams.get("repo");
-  const prNumber = searchParams.get("prNumber");
+  const result = validateOwnerRepoPRParams(searchParams);
 
-  if (!owner || !repo || !prNumber) {
-    return NextResponse.json({ error: "owner, repo ve prNumber gerekli" }, { status: 400 });
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: 400 });
   }
+
+  const { owner, repo, prNumber: prNum } = result.data;
 
   try {
     const apiKeys = await findApiKeysByUserId(userId);
@@ -28,7 +30,6 @@ export async function GET(request: Request) {
 
     const githubToken = decrypt(apiKeys.githubToken);
     const platform = new GitHubPlatform(githubToken, owner, repo);
-    const prNum = parseInt(prNumber, 10);
 
     // Fetch latest analysis and current HEAD SHA in parallel
     // getPRHeadSha may fail (rate limit, network etc.) - handle gracefully
@@ -77,4 +78,5 @@ export async function GET(request: Request) {
     console.error("Status check error:", error);
     return NextResponse.json({ error: "Durum kontrolü başarısız" }, { status: 500 });
   }
+  });
 }

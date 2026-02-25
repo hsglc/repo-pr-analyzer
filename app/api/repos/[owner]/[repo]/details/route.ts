@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyAuth } from "@/lib/auth-server";
+import { verifyAuth, withRequestContext } from "@/lib/auth-server";
 import { findApiKeysByUserId } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import { GitHubPlatform } from "@/lib/core/platforms/github-platform";
@@ -8,6 +8,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ owner: string; repo: string }> }
 ) {
+  return withRequestContext(async () => {
   const auth = await verifyAuth(request);
   if (!auth) {
     return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
@@ -29,4 +30,5 @@ export async function GET(
   } catch {
     return NextResponse.json({ error: "Repo detayları alınamadı" }, { status: 500 });
   }
+  });
 }
