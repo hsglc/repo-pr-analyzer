@@ -41,30 +41,31 @@ export function Sidebar() {
       {/* Overlay for mobile */}
       {open && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm md:hidden"
           onClick={close}
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-56 flex-col border-r border-[var(--color-border)] bg-[var(--color-bg-primary)] transition-transform duration-200 md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col border-r border-[var(--color-border)] bg-[var(--color-bg-primary)] transition-transform duration-200 md:static md:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center border-b border-[var(--color-border)] px-4">
-          <div>
-            <span
-              className="text-xl font-bold"
-              style={{
-                background: "var(--gradient-primary)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              PIA
-            </span>
-            <span className="ml-2 text-xs text-[var(--color-text-muted)]">PR Impact Analyzer</span>
+        <div className="flex h-16 items-center border-b border-[var(--color-border)] px-5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: "var(--gradient-primary)" }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="18" cy="18" r="3"/>
+                <circle cx="6" cy="6" r="3"/>
+                <path d="M13 6h3a2 2 0 0 1 2 2v7"/>
+                <line x1="6" y1="9" x2="6" y2="21"/>
+              </svg>
+            </div>
+            <div>
+              <span className="text-sm font-bold text-[var(--color-text-primary)]">PIA</span>
+              <span className="ml-1.5 text-[10px] text-[var(--color-text-muted)]">PR Impact Analyzer</span>
+            </div>
           </div>
         </div>
 
@@ -79,14 +80,17 @@ export function Sidebar() {
                 onClick={close}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                   active
-                    ? "border-l-2 border-[var(--color-accent)] bg-[var(--color-accent-light)] text-[var(--color-accent-text)] pl-[10px]"
-                    : "text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:translate-x-0.5"
+                    ? "bg-[var(--color-accent-light)] text-[var(--color-accent-text)] shadow-sm"
+                    : "text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
                 }`}
               >
-                <span className={active ? "text-[var(--color-accent)]" : ""}>
+                <span className={`transition-colors ${active ? "text-[var(--color-accent)]" : ""}`}>
                   {item.icon}
                 </span>
                 {item.label}
+                {active && (
+                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]" />
+                )}
               </Link>
             );
           })}
@@ -99,11 +103,11 @@ export function Sidebar() {
             <DarkModeToggle />
           </div>
           {user && (
-            <div className="flex items-center gap-2 rounded-lg bg-[var(--color-bg-tertiary)] px-3 py-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-accent)] text-xs font-medium text-white">
+            <div className="flex items-center gap-2.5 rounded-lg bg-[var(--color-bg-tertiary)] px-3 py-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold text-white" style={{ background: "var(--gradient-primary)" }}>
                 {user.email?.charAt(0).toUpperCase() || "U"}
               </div>
-              <span className="truncate text-xs text-[var(--color-text-secondary)]">
+              <span className="truncate text-xs font-medium text-[var(--color-text-secondary)]">
                 {user.email}
               </span>
             </div>
