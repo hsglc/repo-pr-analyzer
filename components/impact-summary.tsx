@@ -21,9 +21,9 @@ export function ImpactSummary({ report }: { report: AnalysisReport }) {
   const donutColor = RISK_DONUT_COLOR[impact.riskLevel] || "#6b7280";
 
   return (
-    <div className="rounded-xl bg-[var(--color-bg-primary)] p-6 shadow-sm border border-[var(--color-border)]">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-bold text-[var(--color-text-primary)]">Etki Özeti</h3>
+    <div className="rounded-xl bg-[var(--color-bg-primary)] p-4 shadow-sm border border-[var(--color-border)] sm:p-6">
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <h3 className="text-base font-bold text-[var(--color-text-primary)] sm:text-lg">Etki Ozeti</h3>
         <RiskBadge level={impact.riskLevel} />
       </div>
 

@@ -25,7 +25,7 @@ export function RepoCardSkeleton() {
 
 export function RepoCardSkeletonGrid() {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" role="status">
+    <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3" role="status">
       {Array.from({ length: 6 }).map((_, i) => (
         <RepoCardSkeleton key={i} />
       ))}

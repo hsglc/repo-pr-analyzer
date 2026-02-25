@@ -134,11 +134,11 @@ export function PRListItem({
           )}
 
           {analysisSummary && (
-            <div className="mt-2 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--color-text-muted)]">
               <span>{RISK_EMOJI[analysisSummary.riskLevel] || "⚪"} {analysisSummary.riskLevel}</span>
-              <span>·</span>
+              <span className="hidden sm:inline">·</span>
               <span>Son analiz: {new Date(analysisSummary.createdAt).toLocaleDateString("tr-TR")}</span>
-              <span>·</span>
+              <span className="hidden sm:inline">·</span>
               <code className="rounded bg-[var(--color-bg-tertiary)] px-1 py-0.5 text-[10px]">
                 {analysisSummary.commitSha.substring(0, 7)}
               </code>

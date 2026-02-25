@@ -13,12 +13,12 @@ export function NavHeader() {
   const breadcrumbs = buildBreadcrumbs(pathname);
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-primary)] px-6">
-      <div className="flex items-center gap-3">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-primary)] px-3 sm:h-16 sm:px-6">
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
         <button
           onClick={toggle}
-          className="rounded-lg p-2 hover:bg-[var(--color-bg-tertiary)] md:hidden"
-          aria-label="Menü aç/kapat"
+          className="shrink-0 rounded-lg p-2 hover:bg-[var(--color-bg-tertiary)] md:hidden"
+          aria-label="Menu ac/kapat"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="3" y1="6" x2="21" y2="6"/>
@@ -28,20 +28,20 @@ export function NavHeader() {
         </button>
 
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-sm" aria-label="Breadcrumb">
+        <nav className="flex min-w-0 items-center gap-1 text-sm sm:gap-1.5" aria-label="Breadcrumb">
           {breadcrumbs.map((crumb, i) => (
-            <span key={crumb.href} className="flex items-center gap-1.5">
+            <span key={crumb.href} className="flex min-w-0 items-center gap-1 sm:gap-1.5">
               {i > 0 && (
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-text-muted)]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[var(--color-text-muted)]">
                   <polyline points="9 18 15 12 9 6"/>
                 </svg>
               )}
               {i === breadcrumbs.length - 1 ? (
-                <span className="font-semibold text-[var(--color-text-primary)]">{crumb.label}</span>
+                <span className="truncate font-semibold text-[var(--color-text-primary)]">{crumb.label}</span>
               ) : (
                 <Link
                   href={crumb.href}
-                  className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+                  className="shrink-0 whitespace-nowrap text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
                 >
                   {crumb.label}
                 </Link>
@@ -51,17 +51,17 @@ export function NavHeader() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <button
           onClick={() => signOut(auth).then(() => window.location.href = "/login")}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors sm:px-3"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
             <line x1="21" y1="12" x2="9" y2="12"/>
           </svg>
-          Çıkış Yap
+          <span className="hidden sm:inline">Cikis Yap</span>
         </button>
       </div>
     </header>
