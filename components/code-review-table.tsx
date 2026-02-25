@@ -46,9 +46,9 @@ const SEVERITY_CONFIG: Record<string, { emoji: string; bg: string; text: string;
 
 const CATEGORY_LABELS: Record<string, string> = {
   bug: "Bug",
-  security: "Güvenlik",
+  security: "Guvenlik",
   performance: "Performans",
-  maintainability: "Bakım",
+  maintainability: "Bakim",
   style: "Stil",
 };
 
@@ -72,18 +72,18 @@ export function CodeReviewTable({ items }: { items: CodeReviewItem[] }) {
     <div>
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-lg font-bold text-[var(--color-text-primary)]">
-          Kod İnceleme Bulguları
+          Kod Inceleme Bulgulari
           <span className="ml-2 text-sm font-normal text-[var(--color-text-muted)]">
             ({sorted.length}{filtered.length !== items.length ? `/${items.length}` : ""})
           </span>
         </h3>
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={filterSeverity}
             onChange={(e) => setFilterSeverity(e.target.value as FilterSeverity)}
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] px-2 py-1 text-sm text-[var(--color-text-primary)]"
+            className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] px-2 py-1.5 text-sm text-[var(--color-text-primary)]"
           >
-            <option value="all">Tüm severity</option>
+            <option value="all">Tum severity</option>
             {severities.map((s) => (
               <option key={s} value={s}>
                 {SEVERITY_CONFIG[s]?.emoji} {s}
@@ -93,9 +93,9 @@ export function CodeReviewTable({ items }: { items: CodeReviewItem[] }) {
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value as FilterCategory)}
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] px-2 py-1 text-sm text-[var(--color-text-primary)]"
+            className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] px-2 py-1.5 text-sm text-[var(--color-text-primary)]"
           >
-            <option value="all">Tüm kategoriler</option>
+            <option value="all">Tum kategoriler</option>
             {categories.map((c) => (
               <option key={c} value={c}>
                 {CATEGORY_LABELS[c] || c}
@@ -122,9 +122,9 @@ export function CodeReviewTable({ items }: { items: CodeReviewItem[] }) {
             <path d="M9 11l3 3L22 4"/>
             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
           </svg>
-          <h3 className="mb-1 font-semibold text-[var(--color-text-primary)]">Bulgu bulunamadı</h3>
+          <h3 className="mb-1 font-semibold text-[var(--color-text-primary)]">Bulgu bulunamadi</h3>
           <p className="text-sm text-[var(--color-text-muted)]">
-            Filtreye uygun kod inceleme bulgusu bulunamadı.
+            Filtreye uygun kod inceleme bulgusu bulunamadi.
           </p>
         </div>
       )}
@@ -146,7 +146,7 @@ function ReviewItemCard({
   const location = item.line ? `${item.file}:${item.line}` : item.file;
 
   return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] overflow-hidden">
+    <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)]">
       <div className="flex">
         {/* Severity color bar on left */}
         <div
@@ -154,21 +154,26 @@ function ReviewItemCard({
           style={{ backgroundColor: config.barColor }}
         />
 
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <button
             onClick={onToggle}
-            className="flex w-full items-center justify-between p-4 text-left"
+            className="flex w-full items-start gap-2 p-3 text-left sm:items-center sm:gap-3 sm:p-4"
             aria-expanded={open}
           >
-            <div className="flex items-center gap-3 min-w-0">
-              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gradient-to-r ${config.gradient} text-white`}>
-                {config.emoji} {item.severity}
-              </span>
-              <span className="text-sm font-medium text-[var(--color-text-muted)] shrink-0">{item.id}</span>
-              <span className="font-medium text-[var(--color-text-primary)] truncate">{item.title}</span>
+            <div className="min-w-0 flex-1">
+              {/* Mobile: stack severity badge and title */}
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-gradient-to-r ${config.gradient} text-white sm:px-2.5 sm:text-xs`}>
+                  {config.emoji} {item.severity}
+                </span>
+                <span className="shrink-0 text-xs font-medium text-[var(--color-text-muted)] sm:text-sm">{item.id}</span>
+              </div>
+              <p className="mt-1 text-sm font-medium leading-snug text-[var(--color-text-primary)]">
+                {item.title}
+              </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0 ml-2">
-              <span className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-muted)]">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+              <span className="hidden rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-muted)] sm:inline">
                 {CATEGORY_LABELS[item.category] || item.category}
               </span>
               <svg
@@ -181,7 +186,7 @@ function ReviewItemCard({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className={`text-[var(--color-text-muted)] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                className={`shrink-0 text-[var(--color-text-muted)] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
               >
                 <polyline points="6 9 12 15 18 9" />
               </svg>
@@ -195,20 +200,23 @@ function ReviewItemCard({
               maxHeight: open ? contentRef.current?.scrollHeight ?? 500 : 0,
             }}
           >
-            <div className="border-t border-[var(--color-border)] p-4">
-              <div className="mb-3">
-                <code className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-secondary)] break-all">
+            <div className="border-t border-[var(--color-border)] p-3 sm:p-4">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <code className="break-all rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-secondary)]">
                   {location}
                 </code>
+                <span className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs text-[var(--color-text-muted)] sm:hidden">
+                  {CATEGORY_LABELS[item.category] || item.category}
+                </span>
               </div>
 
-              <p className="mb-3 text-sm text-[var(--color-text-secondary)] whitespace-pre-wrap">
+              <p className="mb-3 text-sm leading-relaxed text-[var(--color-text-secondary)] whitespace-pre-wrap break-words">
                 {item.description}
               </p>
 
               {item.suggestion && (
                 <div>
-                  <h4 className="mb-1 text-sm font-semibold text-[var(--color-text-primary)]">Düzeltme Önerisi:</h4>
+                  <h4 className="mb-1 text-sm font-semibold text-[var(--color-text-primary)]">Duzeltme Onerisi:</h4>
                   <pre className="overflow-x-auto rounded-lg p-3 text-xs" style={{ backgroundColor: "#1e1e2e", color: "#cdd6f4" }}>
                     <code>{item.suggestion}</code>
                   </pre>

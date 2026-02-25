@@ -24,32 +24,34 @@ export function ScenarioDetail({
     }`}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between p-4 text-left"
+        className="flex w-full items-start gap-2 p-3 text-left sm:items-center sm:gap-3 sm:p-4"
         aria-expanded={open}
       >
-        <div className="flex items-center gap-3 min-w-0">
-          {onToggle && (
-            <input
-              type="checkbox"
-              checked={checked ?? false}
-              onChange={(e) => {
-                e.stopPropagation();
-                onToggle();
-              }}
-              onClick={(e) => e.stopPropagation()}
-              className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-success)] accent-[var(--color-success)] cursor-pointer"
-            />
-          )}
-          <span className="text-sm font-medium text-[var(--color-text-muted)]">{scenario.id}</span>
-          <span className={`font-medium min-w-0 break-words ${
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            {onToggle && (
+              <input
+                type="checkbox"
+                checked={checked ?? false}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  onToggle();
+                }}
+                onClick={(e) => e.stopPropagation()}
+                className="h-4 w-4 shrink-0 rounded border-[var(--color-border)] text-[var(--color-success)] accent-[var(--color-success)] cursor-pointer"
+              />
+            )}
+            <span className="shrink-0 text-xs font-medium text-[var(--color-text-muted)] sm:text-sm">{scenario.id}</span>
+          </div>
+          <p className={`mt-1 text-sm font-medium leading-snug ${
             checked
               ? "text-[var(--color-text-muted)] line-through"
               : "text-[var(--color-text-primary)]"
           }`}>
             {scenario.title}
-          </span>
+          </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <RiskBadge level={scenario.priority} />
           <svg
             xmlns="http://www.w3.org/2000/svg"
