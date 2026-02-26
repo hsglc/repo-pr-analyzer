@@ -24,3 +24,8 @@ export function getDefaultModel(provider: string): string {
 export function isValidModel(provider: string, model: string): boolean {
   return MODELS.some((m) => m.provider === provider && m.id === model);
 }
+
+export function getCheapestModel(provider: string): string {
+  if (provider === "openai") return "gpt-4o-mini";
+  return "claude-haiku-4-5-20251001";
+}

@@ -10,6 +10,7 @@ import { PRListSkeleton, AnalysisSkeleton } from "@/components/skeletons";
 import type { AnalysisReport, CodeReviewItem } from "@/lib/core/types";
 import { authFetch } from "@/lib/api-client";
 import { ModelSelector } from "@/components/model-selector";
+import { CodebaseChat } from "@/components/codebase-chat";
 
 type TabType = "pulls" | "branches";
 type PRState = "open" | "closed" | "all";
@@ -382,6 +383,8 @@ export default function RepoDetailPage() {
           )}
         </div>
       )}
+
+      <CodebaseChat owner={params.owner} repo={params.repo} />
 
       {/* Branch Analysis Tab */}
       {activeTab === "branches" && (

@@ -15,6 +15,7 @@ import { DiffViewer } from "@/components/diff-viewer";
 import type { AnalysisReport, CodeReviewItem } from "@/lib/core/types";
 import { authFetch } from "@/lib/api-client";
 import { ModelSelector } from "@/components/model-selector";
+import { CodebaseChat } from "@/components/codebase-chat";
 
 interface AnalysisStatus {
   hasHistory: boolean;
@@ -1015,10 +1016,13 @@ export default function AnalysisPage() {
         <DiffViewer owner={params.owner} repo={params.repo} prNumber={prNumber} />
       )}
 
+      <CodebaseChat owner={params.owner} repo={params.repo} />
+
       {/* Commits Tab */}
       {activeTab === "commits" && (
         <CommitHistory owner={params.owner} repo={params.repo} prNumber={prNumber} />
       )}
+
     </div>
   );
 }

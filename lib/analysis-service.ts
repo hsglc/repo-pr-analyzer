@@ -379,6 +379,56 @@ export async function runBranchCodeReview(params: BranchAnalysisParams): Promise
   return { codeReview, headSha, prTitle: `Branch Analizi: ${headBranch} vs ${baseBranch}` };
 }
 
+export async function getOrBuildCodebaseIndex(
+  owner: string,
+  repo: string,
+  githubToken: string,
+  userId: string
+): Promise<CodebaseIndex | null> {
+  const repoFullName = `${owner}/${repo}`;
+
+  // 1. Check for cached index in Firebase
+  const existing = await getCodebaseIndex(userId, repoFullName);
+
+  if (existing) {
+    // 2. Get current HEAD sha to check freshness
+    let currentHeadSha: string;
+    try {
+      const octokit = new Octokit({ auth: githubToken });
+      const { data: repoData } = await octokit.repos.get({ owner, repo });
+      const { data: refData } = await octokit.git.getRef({
+        owner,
+        repo,
+        ref: `heads/${repoData.default_branch}`,
+      });
+      currentHeadSha = refData.object.sha;
+    } catch {
+      // If we can't get HEAD sha, use cached index anyway
+      const index: CodebaseIndex = JSON.parse(existing.indexData);
+      console.log("Using cached codebase index (could not verify freshness)");
+      return index;
+    }
+
+    if (existing.commitSha === currentHeadSha) {
+      const index: CodebaseIndex = JSON.parse(existing.indexData);
+      console.log("Using cached codebase index");
+      return index;
+    }
+  }
+
+  // 3. Build new index
+  const index = await buildCodebaseIndex(owner, repo, githubToken);
+
+  // 4. Save to Firebase
+  await saveCodebaseIndex(userId, repoFullName, {
+    commitSha: index.commitSha,
+    indexData: JSON.stringify(index),
+    createdAt: index.createdAt,
+  });
+
+  return index;
+}
+
 async function getOrBuildCodebaseContext(
   owner: string,
   repo: string,
@@ -386,49 +436,11 @@ async function getOrBuildCodebaseContext(
   userId: string,
   parsedFiles: ParsedFile[]
 ): Promise<string | undefined> {
-  const repoFullName = `${owner}/${repo}`;
   const changedFilePaths = parsedFiles.map((f) => f.path);
 
   try {
-    // 1. Check for cached index in Firebase
-    const existing = await getCodebaseIndex(userId, repoFullName);
-
-    if (existing) {
-      // 2. Get current HEAD sha to check freshness
-      let currentHeadSha: string;
-      try {
-        const octokit = new Octokit({ auth: githubToken });
-        const { data: repoData } = await octokit.repos.get({ owner, repo });
-        const { data: refData } = await octokit.git.getRef({
-          owner,
-          repo,
-          ref: `heads/${repoData.default_branch}`,
-        });
-        currentHeadSha = refData.object.sha;
-      } catch {
-        // If we can't get HEAD sha, use cached index anyway
-        const index: CodebaseIndex = JSON.parse(existing.indexData);
-        console.log("Using cached codebase index (could not verify freshness)");
-        return retrieveContext(index, changedFilePaths);
-      }
-
-      if (existing.commitSha === currentHeadSha) {
-        const index: CodebaseIndex = JSON.parse(existing.indexData);
-        console.log("Using cached codebase index");
-        return retrieveContext(index, changedFilePaths);
-      }
-    }
-
-    // 3. Build new index
-    const index = await buildCodebaseIndex(owner, repo, githubToken);
-
-    // 4. Save to Firebase
-    await saveCodebaseIndex(userId, repoFullName, {
-      commitSha: index.commitSha,
-      indexData: JSON.stringify(index),
-      createdAt: index.createdAt,
-    });
-
+    const index = await getOrBuildCodebaseIndex(owner, repo, githubToken, userId);
+    if (!index) return undefined;
     return retrieveContext(index, changedFilePaths);
   } catch (err) {
     // Codebase indexing is best-effort — don't fail the analysis
