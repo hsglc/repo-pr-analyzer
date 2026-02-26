@@ -7,7 +7,7 @@ export interface ChatMessage {
 }
 
 const MAX_HISTORY_MESSAGES = 10;
-const MAX_TOKENS = 2048;
+const MAX_TOKENS = 4096;
 
 function buildSystemPrompt(codebaseContext: string): string {
   return `Sen bir kod asistanısın. Kullanıcının soruları hakkında aşağıdaki codebase bilgilerini kullanarak yardımcı ol.
@@ -17,6 +17,7 @@ Kurallar:
 - Kod örnekleri verirken ilgili dosya yollarını belirt.
 - Kısa ve net yanıtlar ver, gereksiz tekrarlardan kaçın.
 - Emin olmadığın konularda bunu belirt.
+- Aşağıdaki codebase bilgilerinde dosya içerikleri de yer almaktadır. Mimari, logic ve implementasyon sorularını bu kod içeriklerini analiz ederek yanıtla.
 
 ${codebaseContext}`;
 }

@@ -53,6 +53,10 @@ function formatModule(mod: ModuleInfo): string {
     parts.push(`- Imports: ${mod.imports.join(", ")}`);
   }
 
+  if (mod.content) {
+    parts.push(`\n\`\`\`${mod.language}\n${mod.content}\n\`\`\``);
+  }
+
   return parts.join("\n");
 }
 

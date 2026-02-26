@@ -16,6 +16,7 @@ export interface ModuleInfo {
   imports: string[];
   exports: string[];
   summary: string;
+  content: string;
 }
 
 // ─── Constants ─────────────────────────────────────────
@@ -139,7 +140,10 @@ function extractModuleInfo(path: string, content: string): ModuleInfo {
     extractTSJSInfo(content, path, imports, exports);
   }
 
-  return { path, language, imports, exports, summary };
+  // Truncate content to first 150 lines for indexing
+  const truncatedContent = lines.slice(0, 150).join("\n");
+
+  return { path, language, imports, exports, summary, content: truncatedContent };
 }
 
 function extractTSJSInfo(
